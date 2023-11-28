@@ -1,0 +1,227 @@
+import time
+import math
+
+if __name__ == "":
+    from JsMacrosAC import *
+    from libs.utils.calc import Calc, Region
+    from libs.scripts import Script
+    from libs.inventory import Inv, NotEnoughItemsError
+    from libs.walk import Walk, Block, PathNotFoundError
+
+
+class OutOfReachError(Exception):
+    """Raised when the player is out of reach."""
+    pass
+
+
+class BlockNotVisibleError(Exception):
+    """Raised when the block is not visible."""
+    pass
+
+
+class PositionNotValidError(Exception):
+    """Raised when the position is not valid."""
+    pass
+
+
+class FailedToBreakError(Exception):
+    """Raised when the block failed to break."""
+    pass
+
+
+class Action:
+    """A class to handle actions"""
+    @staticmethod
+    def waitStop():
+        while True:
+            vel = Player.getPlayer().getVelocity()
+            vel = [vel.x, vel.y, vel.z]
+            check = False
+            for v in vel:
+                if v > 0.1:
+                    check = True
+            
+            time.sleep(0.1)
+            
+            if not check:
+                break
+
+
+    @staticmethod
+    def jump():
+        """Jump"""
+        KeyBind.pressKey("key.keyboard.space")
+        Client.waitTick(1)
+        KeyBind.releaseKey("key.keyboard.space")
+    
+
+    @staticmethod
+    def breakBlock(pos: list[int] | list[list[int]]):
+        """Break a block at pos"""
+        if not isinstance(pos[0], list):
+            pos = [pos]
+
+        # sort the pos by distance to the player
+        playerPos = Player.getPlayer().getPos()
+        playerPos = [playerPos.x, playerPos.y, playerPos.z]
+        pos = sorted(pos, key=lambda p: Calc.distance(p, playerPos))
+
+        listener = Script.scriptListener('breakBlock')
+        error = None
+        try:
+            for p in pos:
+                p = [math.floor(p[0]), math.floor(p[1]), math.floor(p[2])]
+                betterTool = Inv.getBetterTool(p)
+                if betterTool != None:
+                    Inv.selectTool(betterTool['tool'])
+                    Client.waitTick(1)
+                else:
+                    Inv.selectNonTool()
+                    Client.waitTick(1)
+
+                player = Player.getPlayer()
+                block = Block.getBlock(p)
+                if not block.isSolid: continue
+                
+                point = block.getInteractPoint(resolution=2)
+                if point == None:
+                    # TODO: add the block to a check list, continue, and
+                    # check the block again after breaking another block
+                    # if the block is still not visible, then raise an error
+                    raise BlockNotVisibleError(f'Block at {p} is not visible')
+            
+                player.lookAt(point[0], point[1], point[2])
+                while True:
+                    listener()
+                
+                    _block = Block.getBlock(p)
+                    if _block.id != block.id:
+                        break
+
+                    KeyBind.pressKey('key.mouse.left')
+                    Client.waitTick(1)
+                
+                KeyBind.releaseKey('key.mouse.left')
+
+        except Exception as e:
+            error = e
+        
+        finally:
+            KeyBind.releaseKey('key.mouse.left')
+            Script.stopScript('breakBlock')
+
+        if error is not None:
+            raise error
+
+    @staticmethod
+    def breakAllBlocks(blockId: str, region: Region):
+        """Break all blocks of blockId in region"""
+        pos = Player.getPlayer().getPos()
+        pos = [pos.x, pos.y, pos.z]
+        reach = Player.getReach()
+
+        blocks = World.findBlocksMatching(blockId, 1)
+
+        blocks = [b for b in blocks if region.contains([b.x, b.y, b.z]) 
+                and Calc.distance(pos, [b.x, b.y, b.z]) <= reach]
+
+        blocks = sorted(blocks, key=lambda b: Calc.distance(pos, [b.x, b.y, b.z]))
+        
+        listener = Script.scriptListener('breakAllBlocks')
+        for block in blocks:
+            listener()
+            Action.breakBlock([block.x, block.y, block.z])
+            Client.waitTick(1)
+
+        Script.stopScript('breakAllBlocks')
+
+
+    @staticmethod
+    def placeBlock(pos: list, blockId: str | list[str], moveToPlace: bool = True):
+        """Place a block at pos"""
+    
+        if isinstance(blockId, str):
+            blockId = [blockId]
+        
+        items = Inv.countItems()
+        item = None
+        for id in blockId:
+            if id in items and items[id] > 0:
+                item = id
+                break
+
+        if item == None:
+            raise NotEnoughItemsError(f'Not enough items to place {blockId}')
+        
+        if moveToPlace:
+            # Ensure that the player is not in the region to place the block
+            region = Region.createRegion(pos, 1)        
+            Walk.walkTo(region, reverse=True, timeLimit=1)
+
+        Inv.selectBuildingBlock(item)
+        player = Player.getPlayer()
+
+        block = Block.getBlock(pos)
+        if block.isSolid:
+            raise PositionNotValidError(f'Position {pos} is not a valid position to place {blockId}')
+        
+        point = block.getInteractPoint(opposite=True)
+        if point == None:
+            raise BlockNotVisibleError(f'Block at {pos} does not have visible support faces to place {blockId}')
+
+        reach = Player.getReach()
+        playerPos = Player.getPlayer().getPos()
+        playerPos = [playerPos.x, playerPos.y, playerPos.z]
+        if Calc.distance(playerPos, point) > reach:
+            raise OutOfReachError(f'Player is out of reach to place {blockId} at {pos}')
+
+        start = time.time()
+        while True:
+            playerPos = Player.getPlayer().getPos()
+            playerPos = [playerPos.x, playerPos.y, playerPos.z]
+            if Calc.distance(playerPos, point) < 1:
+                # jump if the player is too close to the block,
+                # this can make the player place blocks under them
+                Action.jump()
+
+            while True:
+                player.lookAt(point[0], point[1], point[2])
+                KeyBind.pressKey('key.mouse.right')
+                Client.waitTick(1)
+                KeyBind.releaseKey('key.mouse.right')
+                Client.waitTick(1)
+                
+                player = Player.getPlayer()
+                vel = player.getVelocity()
+                if vel.y < 0.1:
+                    break
+
+            _block = Block.getBlock(pos)
+            if _block.isSolid:
+                break
+
+            if time.time() - start > 2:
+                raise FailedToBreakError(f'Failed to place {blockId} at {pos}')
+
+
+    @staticmethod
+    def interactBlock(pos: list):
+        """Interact with a block at pos"""
+        player = Player.getPlayer()
+        player.lookAt(int(pos[0]) + 0.5, int(pos[1]) + 0.5, int(pos[2]) + 0.5)
+        block = Block.getBlock(pos)
+
+        point = block.getInteractPoint()
+        if point == None:
+            raise BlockNotVisibleError(f'Block at {pos} is not visible')
+
+        reach = Player.getReach()
+        playerPos = Player.getPlayer().getPos()
+        playerPos = [playerPos.x, playerPos.y, playerPos.z]
+        if Calc.distance(playerPos, point) > reach:
+            raise OutOfReachError(f'Player is out of reach to interact with block at {pos}')
+
+        player.lookAt(point[0], point[1], point[2])
+        KeyBind.pressKey('key.mouse.right')
+        Client.waitTick(1)
+        KeyBind.releaseKey('key.mouse.right')
