@@ -1,7 +1,7 @@
-/tests/*
-/states/*
-/recipes/*
-/exploration/*
+/tests/*.json
+/states/*.json
+/recipes/*.json
+/exploration/*/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
