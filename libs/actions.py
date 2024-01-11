@@ -56,7 +56,7 @@ class Action:
     
 
     @staticmethod
-    def breakBlock(pos: list[int] | list[list[int]]):
+    def breakBlock(pos: list[int] | list[list[int]], safe: bool = True):
         """Break a block at pos"""
         if not isinstance(pos[0], list):
             pos = [pos]
@@ -71,25 +71,29 @@ class Action:
         try:
             for p in pos:
                 p = [math.floor(p[0]), math.floor(p[1]), math.floor(p[2])]
-                betterTool = Inv.getBetterTool(p)
-                if betterTool != None:
-                    Inv.selectTool(betterTool['tool'])
-                    Client.waitTick(1)
-                else:
-                    Inv.selectNonTool()
-                    Client.waitTick(1)
+                if safe:
+                    betterTool = Inv.getBetterTool(p)
+                    if betterTool != None:
+                        Inv.selectTool(betterTool['tool'])
+                        Client.waitTick(1)
+                    else:
+                        Inv.selectNonTool()
+                        Client.waitTick(1)
 
                 player = Player.getPlayer()
                 block = Block.getBlock(p)
                 if not block.isSolid: continue
                 
-                point = block.getInteractPoint(resolution=2)
-                if point == None:
-                    # TODO: add the block to a check list, continue, and
-                    # check the block again after breaking another block
-                    # if the block is still not visible, then raise an error
-                    raise BlockNotVisibleError(f'Block at {p} is not visible')
-            
+                if safe:
+                    point = block.getInteractPoint(resolution=2)
+                    if point == None:
+                        # TODO: add the block to a check list, continue, and
+                        # check the block again after breaking another block
+                        # if the block is still not visible, then raise an error
+                        raise BlockNotVisibleError(f'Block at {p} is not visible')
+                else:
+                    point = [block.pos[0] + 0.5, block.pos[1] + 0.5, block.pos[2] + 0.5]
+
                 player.lookAt(point[0], point[1], point[2])
                 while True:
                     listener()
@@ -113,8 +117,9 @@ class Action:
         if error is not None:
             raise error
 
+
     @staticmethod
-    def breakAllBlocks(blockId: str, region: Region):
+    def breakAllBlocks(blockId: str, region: Region, safe: bool = True):
         """Break all blocks of blockId in region"""
         pos = Player.getPlayer().getPos()
         pos = [pos.x, pos.y, pos.z]
@@ -130,7 +135,11 @@ class Action:
         listener = Script.scriptListener('breakAllBlocks')
         for block in blocks:
             listener()
-            Action.breakBlock([block.x, block.y, block.z])
+            block_ = Block.getBlock([math.floor(block.x), math.floor(block.y), math.floor(block.z)])
+            if not block_.isSolid: continue
+            if block_.id != blockId: continue
+    
+            Action.breakBlock([block.x, block.y, block.z], safe=safe)
             Client.waitTick(1)
 
         Script.stopScript('breakAllBlocks')
