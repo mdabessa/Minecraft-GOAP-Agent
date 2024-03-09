@@ -17,3 +17,4 @@ if __name__ == "":
     from libs.test import Test, getEnvironment
 
 
+Chat.log("Hello World!")
