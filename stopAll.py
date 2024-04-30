@@ -5,6 +5,7 @@ from libs.importer import require
 
 if __name__ == "":
     from JsMacrosAC import *
+    from libs.utils.logger import Logger, Style
     from libs.scripts import Script
 
 require('scripts', globals())
@@ -12,5 +13,5 @@ require('scripts', globals())
 
 len_ = len(Script.getScripts())
 
-Chat.log(f'Stopping all scripts ({len_})')
+Logger.print(f'Stopping all scripts ({len_})')
 Script.stopAllScripts()

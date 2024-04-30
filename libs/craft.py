@@ -5,6 +5,7 @@ import math
 
 if __name__ == '':
     from JsMacrosAC import *
+    from libs.utils.logger import Logger, Style
     from libs.utils.calc import Region, Calc
     from libs.utils.dictionary import Dictionary
     from libs.state import State
@@ -229,7 +230,7 @@ class Craft:
             place = Craft.getCraftingPlace()
             if place is None:
                 Craft.buildCraftingTable()
-                Chat.log('Crafting table built')
+                Logger.info('Crafting table built')
                 place = Craft.getCraftingPlace()
 
             region = Region.createRegion(place, 3)
@@ -247,7 +248,7 @@ class Craft:
                 break    
             else:
                 Craft.resetCraftingPlace()
-                Chat.log('No crafting table found, building one')
+                Logger.info('No crafting table found, building one')
                 continue
 
 
@@ -400,7 +401,7 @@ class Craft:
             id = recipe.result['item']
             id = Dictionary.getGroup(id)
 
-        Chat.log(f'Crafting {id} x{count}')
+        Logger.info(f'Crafting {id} x{count}')
 
         if id in Craft.collectionMethods:
             func = Craft.collectionMethods[id]
@@ -418,7 +419,7 @@ class Craft:
             listener()
             invItems = Inv.countItems()
             c = invItems.get(id, 0)
-            # Chat.log(f'Crafting {id} x{count} ({c}/{objective})')
+            # Logger.info(f'Crafting {id} x{count} ({c}/{objective})')
             if c >= objective: break
 
             recipeItems = recipe.countIngredients(count)

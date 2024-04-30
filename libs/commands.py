@@ -5,6 +5,7 @@ import time
 
 if __name__ == '':
     from JsMacrosAC import *
+    from libs.utils.logger import Logger, Style, LoggerLevel
     from libs.scripts import Script
     from libs.state import State
     from libs.walk import Walk
@@ -58,25 +59,28 @@ class Command:
 @Command.command('help', aliases=['h'], help='Show help for commands')
 def help(name: str = None, *args, **kwargs):
     if name is None:
-        Chat.log('Commands:')
+        Logger.print(f'{Style.GOLD}Commands')
         for command in Command.commands:
-            Chat.log(f'  {command.name} - {command.help}')
+            Logger.print(f'{Style.AQUA}{command.name} {Style.WHITE}{command.help}')
     else:
         command = Command.getCommand(name)
         if command is None:
-            Chat.log(f'Command "{name}" not found')
+            Logger.print(f'{Style.RED}Command {Style.AQUA}"{name}" {Style.RED}not found')
         else:
-            Chat.log(f'Help for command "{command.name}":')
-            Chat.log(f'  {command.help}')
-            Chat.log(f'  Aliases: {command.aliases}')
-            args = ', '.join([f'<{arg}>' for arg in command.func.__code__.co_varnames[:command.func.__code__.co_argcount]])
-            Chat.log(f'  Arguments: {args}')
+            Logger.print(f'{Style.GOLD}Help for command {Style.AQUA}"{command.name}"')
+            Logger.print(f'{Style.AQUA}Description: {Style.WHITE}{command.help}')
+
+            aliases = ', '.join([f'{Style.WHITE}<{Style.LIGHT_PURPLE}{alias}{Style.WHITE}>' for alias in command.aliases])
+            Logger.print(f'{Style.AQUA}Aliases: {Style.WHITE}[{aliases}{Style.WHITE}]')
+            
+            args = ', '.join([f'{Style.WHITE}<{Style.LIGHT_PURPLE}{arg}{Style.WHITE}>' for arg in command.func.__code__.co_varnames[:command.func.__code__.co_argcount]])
+            Logger.print(f'{Style.AQUA}Arguments: {Style.WHITE}[{args}{Style.WHITE}]')
 
 
 @Command.command('stop', aliases=['s'], help='Stop all scripts')
 def stop(*args, **kwargs):
     Script.stopAllScripts()
-    Chat.log('All scripts stopped')
+    Logger.print('All scripts stopped')
 
 
 @Command.command('walk', aliases=['w', 'goto'], help='Walk to a position or waypoint')
@@ -111,17 +115,18 @@ def walk(*args, **kwargs):
         path = os.path.join(os.getcwd(), 'config', 'jsMacros', 'Macros')
         _kwargs['saveExplorationMap'] = path + '/explorationMap.json'
     
+    Logger.print(f'Walking to {objective}')
     Walk.walkTo(objective, **_kwargs)
 
 
 @Command.command('waypoint', aliases=['wp'], help='Create a waypoint')
 def waypoint(subcommand: str = None, *args, **kwargs):
     if subcommand is None:
-        Chat.log('Subcommands:')
-        Chat.log('  create - Create a waypoint')
-        Chat.log('  list - List all waypoints')
-        Chat.log('  remove - Remove a waypoint')
-        Chat.log('  tp - Teleport to a waypoint')
+        Logger.print(f'{Style.GOLD}Subcommands')
+        Logger.print(f'{Style.AQUA}create {Style.WHITE}Create a waypoint')
+        Logger.print(f'{Style.AQUA}list {Style.WHITE}List all waypoints')
+        Logger.print(f'{Style.AQUA}remove {Style.WHITE}Remove a waypoint')
+        Logger.print(f'{Style.AQUA}tp {Style.WHITE}Teleport to a waypoint')
         return
 
     if subcommand == 'create':
@@ -153,17 +158,17 @@ def waypoint(subcommand: str = None, *args, **kwargs):
         state.set('waypoints', waypoints)
         state.save()
 
-        Chat.log(f'Waypoint [{name}](x={pos[0]}, y={pos[1]}, z={pos[2]}, dimension={pos[3]}) created')
+        Logger.print(f'Waypoint [{name}](x={pos[0]}, y={pos[1]}, z={pos[2]}, dimension={pos[3]}) created')
     
     elif subcommand == 'list':
         state = State()
         waypoints = state.get('waypoints', {})
-        Chat.log('Waypoints:')
+        Logger.print(f'{Style.GOLD}Waypoints')
         for name, pos in waypoints.items():
             if name.startswith('.') and not bool(kwargs.get('all', False)):
                 continue
 
-            Chat.log(f'  {name} - (x={pos[0]}, y={pos[1]}, z={pos[2]}, dimension={pos[3]})')
+            Logger.print(f'{name} - (x={pos[0]}, y={pos[1]}, z={pos[2]}, dimension={pos[3]})')
     
     elif subcommand == 'remove':
         if 'name' not in kwargs and len(args) < 1:
@@ -183,7 +188,7 @@ def waypoint(subcommand: str = None, *args, **kwargs):
         state.set('waypoints', waypoints)
         state.save()
 
-        Chat.log(f'Waypoint "{name}" removed')
+        Logger.print(f'Waypoint {Style.AQUA}"{name}" {Style.WHITE}removed')
     
     elif subcommand == 'tp':
         state = State()
@@ -217,28 +222,28 @@ def cheat(*args, **kwargs):
     cheat = state.get('cheat', False)
     if cheat:
         state.set('cheat', False)
-        Chat.log('Cheats disabled')
+        Logger.print('Cheats disabled')
     else:
         state.set('cheat', True)
-        Chat.log('Cheats enabled')
+        Logger.print('Cheats enabled')
     state.save()
 
 
 @Command.command('script', aliases=['sc', 'scripts'], help='List all scripts')
 def script(*args, **kwargs):
     scripts = Script.getScripts()
-    Chat.log('Scripts:')
-    for script in scripts:
+    Logger.print(f'{Style.GOLD}Scripts')
+    for key, script in scripts.items():
         name = script['name']
         created = script['created']
         runningTime = time.time() - created
-        Chat.log(f'  {name} - {runningTime:.2f}s')
+        Logger.print(f'{Style.AQUA}{name} {Style.WHITE}Running for {Style.GREEN}{runningTime:.2f}s')
 
 
 @Command.command('craft', aliases=['cr'], help='Craft an item')
 def craft(id: str = None, count: int = 1, *args, **kwargs):
     if id is None:
-        Chat.log('Usage: craft <id> [count]')
+        Logger.print('Usage: craft <id> [count]')
         return
     
     if not id.startswith('minecraft:'):
@@ -248,7 +253,7 @@ def craft(id: str = None, count: int = 1, *args, **kwargs):
     error = None
     try:
         Craft.craft(id=id, count=int(count), listener=listerner)
-        Chat.log(f'Crafted {count}x {id}')
+        Logger.print(f'Crafted {count}x {id}')
     except Exception as e:
         error = e
     finally:
@@ -265,7 +270,7 @@ def test(testName: str = None,
     """Run a test"""
 
     if testName is None:
-        Chat.log('Usage: test <testName>')
+        Logger.print('Usage: test <testName>')
         return
 
     test = Test.getTest(testName)
@@ -289,10 +294,10 @@ def test(testName: str = None,
     # If the test takes more than 'timeoutSec' seconds, stop all scripts,
     # except the test script.
     # If the listener was fired to stop the test handler, stop all scripts.
-    Chat.log(f'Running test "{testName}" {quantity} times')
+    Logger.print(f'Running test {Style.AQUA}"{testName}"{Style.WHITE} {quantity} times')
     try:
         for i in range(quantity):
-            Chat.log(f'Running test {i + 1}/{quantity}...')
+            Logger.print(f'Running test {Style.AQUA}"{testName}"{Style.WHITE} {i + 1}/{quantity}')
             Test.resetEnvironment()
 
             thread = threading.Thread(target=test, args=args, kwargs=kwargs)
@@ -302,7 +307,7 @@ def test(testName: str = None,
                 time.sleep(0.1)
                 listener()
                 if time.time() - start > timeoutSec:
-                    Chat.log(f'The test "{testName}" took too long to finish [timeout: {timeoutSec}s]')
+                    Logger.print(f'The test {Style.AQUA}"{testName}"{Style.WHITE} took too long to finish ({Style.RED}{timeoutSec}s{Style.WHITE})')
                     Script.stopAllScriptsExcept('test')
                     break
                 
@@ -317,7 +322,7 @@ def test(testName: str = None,
             thread.join() # Wait for the thread to finish
 
     if error is not None:
-        Chat.log(f'The test handler crashed')
+        Logger.print(f'The test handler crashed')
         raise error
 
-    Chat.log(f'Test "{testName}" finished')
+    Logger.print(f'Test {Style.AQUA}"{testName}"{Style.WHITE} finished')

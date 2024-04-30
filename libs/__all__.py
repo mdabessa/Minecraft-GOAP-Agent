@@ -6,6 +6,7 @@ from libs.importer import require
 
 # Fundamental libs, utils that don't depend on other libs
 require('utils.calc', globals())
+require('utils.logger', globals())
 require('utils.dictionary', globals())
 
 # Fundamental libs, just depend on JsMacrosAC or Utils

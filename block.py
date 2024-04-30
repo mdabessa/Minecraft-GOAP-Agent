@@ -3,6 +3,7 @@ import math
 
 if __name__ == '':
     from JsMacrosAC import *
+    from libs.utils.logger import Logger, Style
     from libs.walk import Block
 
 
@@ -25,16 +26,14 @@ else:
 block = Block.getBlock(pos)
 # block = block.BlockDataHelper()
 
-Chat.log('=== Block ===')
-Chat.log(block.id)
-Chat.log(block.pos)
-Chat.log(f'isAir: {block.isAir}')
-Chat.log(f'isLiquid: {block.isLiquid}')
-Chat.log(f'isOpaque: {block.isOpaque}')
+Logger.print(Style.GOLD + "Block Info")
+Logger.print(block.id)
+Logger.print(block.pos)
+Logger.print(f'isAir: {block.isAir}')
+Logger.print(f'isLiquid: {block.isLiquid}')
+Logger.print(f'isOpaque: {block.isOpaque}')
 
-Chat.log('=== Player ===')
-Chat.log('Pitch: ' + str(pitch))
-Chat.log('Yaw: ' + str(yaw))
-
-# Chat.log(block.getBlockStateHelper().isOpaque())
+Logger.print(Style.GOLD + "Player Info")
+Logger.print('Pitch: ' + str(pitch))
+Logger.print('Yaw: ' + str(yaw))
 

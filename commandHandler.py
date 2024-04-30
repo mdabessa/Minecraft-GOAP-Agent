@@ -6,6 +6,7 @@ from libs.importer import require
 
 if __name__ == '':
     from JsMacrosAC import *
+    from libs.utils.logger import Logger, LoggerLevel
     from libs.commands import Command, CommandNotFound
 
 
@@ -24,4 +25,5 @@ if message is not None:
     if command is None:
         raise CommandNotFound(f'Command "{cmd}" not found')
     else:
+        Logger.level = LoggerLevel.INFO
         command.execute(*args, **kwargs)

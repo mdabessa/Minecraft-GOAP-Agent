@@ -8,6 +8,7 @@ import threading
 
 if __name__ == "":
     from JsMacrosAC import *
+    from libs.utils.logger import Logger, Style
     from libs.utils.calc import Calc, Region
     from libs.scripts import Script
     from libs.actions import Action
@@ -124,7 +125,7 @@ class Block:
 
                 points.append(point[:])
             
-        # Chat.log(f'Points: {len(points)}/{(resolution)**2 * len(faces)}')
+        # Logger.debug(f'Points: {len(points)}/{(resolution)**2 * len(faces)}')
         # for point in points:
         #     Chat.say(f'/execute at @s run particle minecraft:flame {point[0]} {point[1]} {point[2]} 0 0 0 0 1 force')
         #     time.sleep(0.1)
@@ -529,7 +530,7 @@ class Walk:
         """Basic move to the node position"""
         pos = node.position
         pos = [pos[0]+0.5, pos[1], pos[2]+0.5]
-        Chat.log(f"Moving to {pos}")
+        Logger.debug(f"Moving to {pos}")
         
         if node.action is not None:
             Action.waitStop()
@@ -537,7 +538,7 @@ class Walk:
                 Action.placeBlock(node.action['pos'], self.placeBlocks, moveToPlace=False)
                 
             if node.action['type'] == 'break':
-                Chat.log(f"Breaking {node.action['pos']}")
+                Logger.debug(f"Breaking {node.action['pos']}")
                 Action.breakBlock(node.action['pos'])
 
 
@@ -611,7 +612,7 @@ class Walk:
             currentNode = openList.pop(0)
             openHash.remove(encodePos(currentNode.position))
 
-            Chat.log(f"Nodes in open list: {len(openList)} | time: {(time.time() - startTime):.2f} | pos: {currentNode}")
+            Logger.debug(f"Nodes in open list: {len(openList)} | time: {(time.time() - startTime):.2f} | pos: {currentNode}")
 
             if ((self.stepEnd.contains(currentNode.position) and not self.reverse)
                 or (not self.stepEnd.contains(currentNode.position) and self.reverse)):
@@ -725,11 +726,11 @@ class Walk:
                 dist = Calc.distance(pos, lastPos)
                 index = self.searchClosestStep(pos, lastPath) + 1
                 if index < len(lastPath):
-                    Chat.log(f'Len of last path: {len(lastPath)} | index: {index}')
-                    Chat.log(f'Adding {encodePos(lastPath[index].position)} to deny list')
+                    Logger.debug(f'Len of last path: {len(lastPath)} | index: {index}')
+                    Logger.debug(f'Adding {encodePos(lastPath[index].position)} to deny list')
                     self.denyList.add(encodePos(lastPath[index].position))
                     
-                    Chat.log('Path interrupted, recalculating...')
+                    Logger.debug('Path interrupted, recalculating...')
                     path = None
                     continue
             
@@ -738,11 +739,11 @@ class Walk:
             lastPos = path[-1].position[:]
             lastPath = [node.copy() for node in path]
 
-            Chat.log("Path found")
+            Logger.debug("Path found")
             self.__thread = threading.Thread(target=self.followPath, args=(path,))
             self.__thread.start()
 
-        Chat.log("Path finished")
+        Logger.debug("Path finished")
 
 
     def heuristic(self, node: Node, end: Node) -> float:

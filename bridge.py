@@ -6,10 +6,9 @@ require('__all__', globals())
 
 if __name__ == "":
     from JsMacrosAC import *
+    from libs.utils.logger import Logger, Style
     from libs.walk import Block
     from libs.inventory import Inv
-
-
 
 
 scriptName = 'main'
@@ -18,7 +17,7 @@ if controller is None: controller = True
 else: controller = not controller
 
 GlobalVars.toggleBoolean(scriptName)
-Chat.log(f'Main script {"enabled" if controller else "disabled"}!')
+Logger.print(f'Main script {"enabled" if controller else "disabled"}!')
 
 id = 'minecraft:glass'
 yaw = 180
@@ -56,7 +55,7 @@ while controller:
     block_ = Block.getBlock(pos)
 
     if block.pos == block_.pos and time.time() - timeLast > 2:
-        Chat.log('Mudando de direção')
+        Logger.print('Mudando de direção')
         key = 'key.keyboard.a' if yaw == 180 else 'key.keyboard.d'
 
         KeyBind.key("key.keyboard.s", False)
@@ -73,7 +72,7 @@ while controller:
 
             KeyBind.key(key, True)
             Client.waitTick(1)
-            Chat.log(KeyBind.getPressedKeys())
+            # Logger.print(KeyBind.getPressedKeys())
         
         KeyBind.key(key, False)
         Client.waitTick(1)

@@ -6,6 +6,7 @@ require('__all__', globals())
 
 if __name__ == "":
     from JsMacrosAC import *
+    from libs.utils.logger import Logger, Style, LoggerLevel
     from libs.utils.calc import Calc, Region
     from libs.walk import Walk, Node, Block
     from libs.scripts import Script
@@ -17,4 +18,4 @@ if __name__ == "":
     from libs.test import Test, getEnvironment
 
 
-Chat.log("Hello World!")
+Logger.print(Style.GOLD + "Hello World!")

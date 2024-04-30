@@ -1,5 +1,6 @@
 if __name__ == '':
     from JsMacrosAC import *
+    from libs.utils.logger import Logger, Style
     from libs.utils.calc import Calc, Region
     from libs.utils.dictionary import Dictionary
     from libs.walk import Walk
@@ -64,14 +65,14 @@ class Wood:
         trees = Wood.searchTree()
         if len(trees) == 0:
             if exploreIfNoWood:
-                Chat.log('No trees found, exploring...')
+                Logger.debug('No trees found, exploring...')
                 raise NotImplementedError('Exploration not implemented yet') # TODO: explore function
             else:
                 raise NoTreeFound('No trees found in the area')
 
         for tree in trees:
             pos = [tree.x, tree.y, tree.z]
-            Chat.log(f'Cutting tree at {pos}')
+            Logger.debug(f'Cutting tree at {pos}')
             region = Region.createRegion(pos, 5)
             Walk.walkTo(region)
             Wood.cutTree(pos)

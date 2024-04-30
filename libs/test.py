@@ -8,6 +8,7 @@ import math
 
 if __name__ == '':
     from JsMacrosAC import *
+    from libs.utils.logger import Logger, Style
     from libs.utils.calc import Calc, Region
     from libs.inventory import Inv
     from libs.explorer import Explorer
@@ -113,8 +114,8 @@ def testCase(func: callable) -> callable:
             saveTestReports(data)
 
         except Exception as e:
-            Chat.log(f'Error in test wrapper: {e}')
-            Chat.log(traceback.format_exc())
+            Logger.error(f'Error in test wrapper: {e}')
+            Logger.error(traceback.format_exc())
             raise e
     
         return result
