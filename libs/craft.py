@@ -8,7 +8,7 @@ if __name__ == '':
     from libs.utils.logger import Logger, Style
     from libs.utils.calc import Region, Calc
     from libs.utils.dictionary import Dictionary
-    from libs.state import State
+    from libs.state import State, Waypoint
     from libs.inventory import Inv
     from libs.actions import Action
     from libs.walk import Walk
@@ -120,12 +120,11 @@ class Craft:
 
 
     @staticmethod
-    def getCraftingPlace() -> list:
+    def getCraftingPlace() -> list | None:
         """Get the position of the crafting table"""
-        state = State()
-        waypoints = state.get('waypoints', {})
-        if '.crafting' in waypoints:
-            return waypoints['.crafting'][:3]
+        wp = Waypoint.getWaypoint('.crafting')
+        if wp is not None:
+            return [wp.x, wp.y, wp.z]
         
         return None
     
@@ -133,21 +132,12 @@ class Craft:
     def setCraftingPlace(pos: list):
         """Set the position of the crafting table"""
         dimention = World.getDimension()
-        state = State()
-        waypoints = state.get('waypoints', {})
-        waypoints['.crafting'] = [*pos, dimention]
-        state.set('waypoints', waypoints)
-        state.save()
+        Waypoint.addWaypoint('.crafting', *pos, dimention)
 
     @staticmethod
     def resetCraftingPlace():
         """Reset the position of the crafting table"""
-        state = State()
-        waypoints = state.get('waypoints', {})
-        if '.crafting' in waypoints:
-            del waypoints['.crafting']
-            state.set('waypoints', waypoints)
-            state.save()
+        Waypoint.delWaypoint('.crafting')
 
 
     @staticmethod

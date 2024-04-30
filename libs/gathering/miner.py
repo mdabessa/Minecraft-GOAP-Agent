@@ -7,7 +7,7 @@ if __name__ == '':
     from libs.utils.dictionary import Dictionary
     from libs.walk import Walk
     from libs.actions import Action
-    from libs.state import State
+    from libs.state import State, Waypoint
     from libs.inventory import Inv
     from libs.craft import Craft
     from libs.explorer import Explorer
@@ -107,24 +107,17 @@ class Miner:
     @staticmethod
     def getMinePlace() -> list:
         """Get the mine place"""
-        state = State()
+        wp = Waypoint.getWaypoint('.minePlace') 
+        if wp is not None:
+            return [wp.x, wp.y, wp.z]
 
-        waypoints = state.get('waypoints', {})
-        if '.minePlace' in waypoints:
-            return waypoints['.minePlace'][:3]
-        
         return None
     
     @staticmethod
     def setMinePlace(pos: list):
         """Set the mine place"""
-        state = State()
         dimention = World.getDimension()
-        waypoints = state.get('waypoints', {})
-        waypoints['.minePlace'] = [*pos, dimention]
-        state.set('waypoints', waypoints)
-        state.save()
-
+        Waypoint.addWaypoint('.minePlace', *pos, dimention)
 
     @staticmethod
     def goToMinePlace():

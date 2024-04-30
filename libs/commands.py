@@ -7,7 +7,7 @@ if __name__ == '':
     from JsMacrosAC import *
     from libs.utils.logger import Logger, Style, LoggerLevel
     from libs.scripts import Script
-    from libs.state import State
+    from libs.state import State, Waypoint
     from libs.walk import Walk
     from libs.craft import Craft
     from libs.test import Test
@@ -87,16 +87,15 @@ def stop(*args, **kwargs):
 def walk(*args, **kwargs):
     if len(args) == 1 or 'waypoint' in kwargs:
         name = args[0]
-        state = State()
-        waypoints = state.get('waypoints', {})
+        wp = Waypoint.getWaypoint(name)
         
-        if name not in waypoints:
+        if wp is None:
             raise CommandArgumentError(f'Waypoint "{name}" not found')
 
-        if waypoints[name][3] != World.getDimension():
+        if wp.dimension != World.getDimension():
             raise CommandArgumentError(f'Waypoint "{name}" is in another dimension')
             
-        pos = waypoints[name][:3]
+        pos = [wp.x, wp.y, wp.z]
         objective = [float(x) for x in pos]
 
     else:
@@ -152,23 +151,16 @@ def waypoint(subcommand: str = None, *args, **kwargs):
         pos[1] = round(pos[1], 2)
         pos[2] = round(pos[2], 2)
 
-        state = State()
-        waypoints = state.get('waypoints', {})
-        waypoints[name] = pos
-        state.set('waypoints', waypoints)
-        state.save()
-
-        Logger.print(f'Waypoint [{name}](x={pos[0]}, y={pos[1]}, z={pos[2]}, dimension={pos[3]}) created')
+        wp = Waypoint.addWaypoint(name, pos[0], pos[1], pos[2], pos[3])
+        Logger.print(f'{wp} created')
     
     elif subcommand == 'list':
-        state = State()
-        waypoints = state.get('waypoints', {})
+        waypoints = Waypoint.getWaypoints()
         Logger.print(f'{Style.GOLD}Waypoints')
-        for name, pos in waypoints.items():
+        for name, wp in waypoints.items():
             if name.startswith('.') and not bool(kwargs.get('all', False)):
                 continue
-
-            Logger.print(f'{name} - (x={pos[0]}, y={pos[1]}, z={pos[2]}, dimension={pos[3]})')
+            Logger.print(f'{wp}')
     
     elif subcommand == 'remove':
         if 'name' not in kwargs and len(args) < 1:
@@ -176,17 +168,14 @@ def waypoint(subcommand: str = None, *args, **kwargs):
 
         name = kwargs['name'] if 'name' in kwargs else args[0]
 
-        state = State()
-        waypoints = state.get('waypoints', {})
-        if name not in waypoints:
+        wp = Waypoint.getWaypoint(name)
+        if name is None:
             raise CommandArgumentError(f'Waypoint "{name}" not found')
 
         if name.startswith('.') and not bool(kwargs.get('all', False)):
             raise CommandArgumentError(f'Cannot remove waypoint "{name}", it is a system waypoint')
 
-        del waypoints[name]
-        state.set('waypoints', waypoints)
-        state.save()
+        wp.delete()
 
         Logger.print(f'Waypoint {Style.AQUA}"{name}" {Style.WHITE}removed')
     
@@ -201,15 +190,14 @@ def waypoint(subcommand: str = None, *args, **kwargs):
         
         name = kwargs['name'] if 'name' in kwargs else args[0]
 
-        waypoints = state.get('waypoints', {})
-        if name not in waypoints:
+        wp = Waypoint.getWaypoint(name)
+        if wp is None:
             raise CommandArgumentError(f'Waypoint "{name}" not found')
         
-        pos = waypoints[name]
-        if pos[3] != World.getDimension():
+        if wp['dimension'] != World.getDimension():
             raise CommandArgumentError(f'Waypoint "{name}" is in another dimension')
         
-        text = f'/tp @p {pos[0]} {pos[1]} {pos[2]}'
+        text = f'/tp @p {pos["x"]} {pos["y"]} {pos["z"]}'
         Chat.say(text)
 
     else:
