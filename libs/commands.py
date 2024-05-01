@@ -309,8 +309,10 @@ def test(testName: str = None,
         if thread is not None:
             thread.join() # Wait for the thread to finish
 
+    Chat.say('/gamemode creative')
+
     if error is not None:
-        Logger.print(f'The test handler crashed')
+        Logger.error(f'The test handler crashed')
         raise error
 
     Logger.print(f'Test {Style.AQUA}"{testName}"{Style.WHITE} finished')
