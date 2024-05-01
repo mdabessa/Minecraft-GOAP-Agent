@@ -78,10 +78,7 @@ class Script:
     @staticmethod
     def stopScript(name: str):
         """Function to stop a script registered in the global controller."""
-        scripts = Script.getScripts()
-        if name in scripts:
-            del scripts[name]
-            Script.setScripts(scripts)
+        Script.removeScript(name)
 
 
     @staticmethod
