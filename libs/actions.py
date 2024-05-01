@@ -133,17 +133,25 @@ class Action:
         blocks = sorted(blocks, key=lambda b: Calc.distance(pos, [b.x, b.y, b.z]))
         
         listener = Script.scriptListener('breakAllBlocks')
-        for block in blocks:
-            listener()
-            block_ = Block.getBlock([math.floor(block.x), math.floor(block.y), math.floor(block.z)])
-            if not block_.isSolid: continue
-            if block_.id != blockId: continue
-    
-            Action.breakBlock([block.x, block.y, block.z], safe=safe)
-            Client.waitTick(1)
+        error = None
+        try:
+            for block in blocks:
+                listener()
+                block_ = Block.getBlock([math.floor(block.x), math.floor(block.y), math.floor(block.z)])
+                if not block_.isSolid: continue
+                if block_.id != blockId: continue
+        
+                Action.breakBlock([block.x, block.y, block.z], safe=safe)
+                Client.waitTick(1)
 
-        Script.stopScript('breakAllBlocks')
+        except Exception as e:
+            error = e
 
+        finally:
+            Script.stopScript('breakAllBlocks')
+
+        if error is not None:
+            raise error
 
     @staticmethod
     def placeBlock(pos: list, blockId: str | list[str], moveToPlace: bool = True):
