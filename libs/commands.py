@@ -10,7 +10,7 @@ if __name__ == '':
     from libs.state import State, Waypoint
     from libs.walk import Walk
     from libs.craft import Craft
-    from libs.test import Test
+    from libs.test import Test, clearTestReports
 
 
 class CommandNotFound(Exception):
@@ -316,3 +316,9 @@ def test(testName: str = None,
         raise error
 
     Logger.print(f'Test {Style.AQUA}"{testName}"{Style.WHITE} finished')
+
+
+@Command.command('clearTest', aliases=['ct'], help='Clear the tests data')
+def clearTest(*args, **kwargs):
+    clearTestReports()
+    Logger.print('Tests data cleared')

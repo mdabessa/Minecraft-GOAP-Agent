@@ -72,6 +72,12 @@ def getTestReports() -> dict:
     return {}
 
 
+def clearTestReports():
+    """Clear the test reports"""
+    if os.path.exists(testPath):
+        os.remove(testPath)
+
+
 def saveTestReports(data: dict):
     """Save the test reports"""
     with open(testPath, 'w') as file:
