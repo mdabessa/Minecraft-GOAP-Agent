@@ -50,7 +50,7 @@ class Wood:
         block = World.getBlock(int(pos[0]), int(pos[1]), int(pos[2]))
         if block == None: return
 
-        Action.breakAllBlocks(block.getId(), region)
+        Action.breakAllBlocks(block.getId(), region, safe=False)
 
 
     @staticmethod
