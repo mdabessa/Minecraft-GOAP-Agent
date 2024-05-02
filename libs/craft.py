@@ -218,16 +218,24 @@ class Craft:
             if c > 2: raise CraftingError('No crafting table found')
     
             place = Craft.getCraftingPlace()
+            pos = Player.getPlayer().getPos()
+            pos = [int(pos.x), int(pos.y), int(pos.z)]
+
             if place is None:
                 Craft.buildCraftingTable()
                 Logger.info('Crafting table built')
                 place = Craft.getCraftingPlace()
+            
+            elif Calc.distance(pos, place) > 350:
+                Craft.resetCraftingPlace()
+                Logger.info('Crafting table too far, building a new one')
+                continue
+            
+            # TODO: check if its better to walk to the crafting table or craft a new one
 
             region = Region.createRegion(place, 3)
             Walk.walkTo(region)
 
-            pos = Player.getPlayer().getPos()
-            pos = [int(pos.x), int(pos.y), int(pos.z)]
             craftingTable =  World.findBlocksMatching('minecraft:crafting_table', 1)
             craftingTable = [[int(b.x), int(b.y), int(b.z)] for b in craftingTable]
             craftingTable.sort(key=lambda b: Calc.distance(pos, b))
