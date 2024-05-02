@@ -51,6 +51,7 @@ class Logger:
     @staticmethod
     def print(message: str) -> None:
         """Prints a message to the game"""
+        message = str(message)
         Chat.logColor(message)
 
     @classmethod
