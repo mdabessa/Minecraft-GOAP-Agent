@@ -115,7 +115,13 @@ def walk(*args, **kwargs):
         _kwargs['saveExplorationMap'] = path + '/explorationMap.json'
     
     Logger.print(f'Walking to {objective}')
+
     Walk.walkTo(objective, **_kwargs)
+
+    pos = Player.getPlayer().getPos()
+    pos = [pos.x, pos.y, pos.z]
+    pos = [round(x, 2) for x in pos]
+    Logger.print(f'Arrived at {pos}')
 
 
 @Command.command('waypoint', aliases=['wp'], help='Create a waypoint')
