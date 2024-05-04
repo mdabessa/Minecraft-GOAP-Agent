@@ -4,6 +4,7 @@ import math
 if __name__ == "":
     from JsMacrosAC import *
     from libs.utils.calc import Calc, Region
+    from libs.utils.logger import Logger
     from libs.scripts import Script
     from libs.inventory import Inv, NotEnoughItemsError
     from libs.walk import Walk, Block, PathNotFoundError
@@ -222,21 +223,46 @@ class Action:
     @staticmethod
     def interactBlock(pos: list):
         """Interact with a block at pos"""
+        Logger.debug(f'Interacting with block at {pos}')
         player = Player.getPlayer()
-        player.lookAt(int(pos[0]) + 0.5, int(pos[1]) + 0.5, int(pos[2]) + 0.5)
-        block = Block.getBlock(pos)
-
-        point = block.getInteractPoint()
-        if point == None:
-            raise BlockNotVisibleError(f'Block at {pos} is not visible')
+        player.lookAt(math.floor(pos[0]) + 0.5, math.floor(pos[1]) + 0.5, math.floor(pos[2]) + 0.5)
 
         reach = Player.getReach()
-        playerPos = Player.getPlayer().getPos()
-        playerPos = [playerPos.x, playerPos.y, playerPos.z]
-        if Calc.distance(playerPos, point) > reach:
-            raise OutOfReachError(f'Player is out of reach to interact with block at {pos}')
+        
+        block = Action.rayTraceBlock()
+        if ((block is None) or (Calc.distance([
+            math.floor(block.getX()), math.floor(block.getY()), math.floor(block.getZ())], pos) != 0)): 
 
-        player.lookAt(point[0], point[1], point[2])
+            block = Block.getBlock(pos)
+            point = block.getInteractPoint()
+            if point == None:
+                raise BlockNotVisibleError(f'Block at {pos} is not visible')
+
+            playerPos = Player.getPlayer().getPos()
+            playerPos = [playerPos.x, playerPos.y, playerPos.z]
+            if Calc.distance(playerPos, point) > reach:
+                raise OutOfReachError(f'Player is out of reach to interact with block at {pos}')
+
+            player.lookAt(point[0], point[1], point[2])
+
+        Client.waitTick(1)
         KeyBind.pressKey('key.mouse.right')
         Client.waitTick(1)
         KeyBind.releaseKey('key.mouse.right')
+
+
+    @staticmethod
+    def rayTraceBlock(steps: float = 0.1, maxDistance: float = None):
+        """Ray trace and return the first block"""
+        if maxDistance is None:
+            maxDistance = Player.getReach()
+
+        for i in range(1, int(maxDistance / steps)):
+            reach = i * steps
+
+            block = Player.rayTraceBlock(reach, False)
+            if block is not None and block.getId() != 'minecraft:air':
+                return block
+            
+        return None
+        
