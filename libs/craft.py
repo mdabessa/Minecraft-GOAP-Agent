@@ -248,7 +248,7 @@ class Craft:
             if place is None:
                 Craft.buildCraftingTable()
                 Logger.info('Crafting table built')
-                continue
+                place = Craft.getCraftingPlace()
             
             elif Calc.distance(pos, place) > 350:
                 Craft.resetCraftingPlace()
