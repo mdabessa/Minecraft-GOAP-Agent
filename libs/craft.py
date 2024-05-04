@@ -122,22 +122,37 @@ class Craft:
     @staticmethod
     def getCraftingPlace() -> list | None:
         """Get the position of the crafting table"""
+        craftingTable =  World.findBlocksMatching('minecraft:crafting_table', 1)
+        craftingTable = [[int(b.x), int(b.y), int(b.z)] for b in craftingTable]
+        
         wp = Waypoint.getWaypoint('.crafting')
         if wp is not None:
-            return [wp.x, wp.y, wp.z]
+            craftingTable.append([wp.x, wp.y, wp.z])
         
-        return None
-    
+        pos = Player.getPlayer().getPos()
+        pos = [int(pos.x), int(pos.y), int(pos.z)]
+        craftingTable.sort(key=lambda b: Calc.distance(pos, b))
+
+        if len(craftingTable) == 0: return None        
+        pos = craftingTable[0]
+
+        Craft.setCraftingPlace(pos)
+
+        return pos
+
+
     @staticmethod
     def setCraftingPlace(pos: list):
         """Set the position of the crafting table"""
         dimention = World.getDimension()
         Waypoint.addWaypoint('.crafting', *pos, dimention)
+        Logger.debug('Crafting table set at ' + str(pos))
 
     @staticmethod
     def resetCraftingPlace():
         """Reset the position of the crafting table"""
         Waypoint.delWaypoint('.crafting')
+        Logger.debug('Crafting table reset')
 
 
     @staticmethod
@@ -233,7 +248,7 @@ class Craft:
             if place is None:
                 Craft.buildCraftingTable()
                 Logger.info('Crafting table built')
-                place = Craft.getCraftingPlace()
+                continue
             
             elif Calc.distance(pos, place) > 350:
                 Craft.resetCraftingPlace()
@@ -244,6 +259,9 @@ class Craft:
 
             region = Region.createRegion(place, 3)
             Walk.walkTo(region)
+
+            pos = Player.getPlayer().getPos()
+            pos = [int(pos.x), int(pos.y), int(pos.z)]
 
             craftingTable =  World.findBlocksMatching('minecraft:crafting_table', 1)
             craftingTable = [[int(b.x), int(b.y), int(b.z)] for b in craftingTable]
@@ -267,9 +285,14 @@ class Craft:
         if len(craftingTable) == 0:
             raise CraftingError('No crafting table found')
         
+        pos = Player.getPlayer().getPos()
+        pos = [math.floor(pos.x), math.floor(pos.y), math.floor(pos.z)]
+        
+        craftingTable = [[math.floor(b.x), math.floor(b.y), math.floor(b.z)] for b in craftingTable]
+        craftingTable.sort(key=lambda b: Calc.distance(pos, b))
         craftingTable = craftingTable[0]
-        pos = [math.floor(craftingTable.x), math.floor(craftingTable.y), math.floor(craftingTable.z)]
-        Action.interactBlock(pos)
+        
+        Action.interactBlock(craftingTable)
         Time.sleep(Craft.interactionDelay)
 
 
