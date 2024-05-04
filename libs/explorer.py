@@ -31,13 +31,13 @@ class Explorer:
 
 
     @staticmethod
-    def _searchGoodPlaceToBuild(radius: int = 32, timeLimit: int = 2, range_: int = 1, listener: callable = lambda:None, **kwargs) -> list:
+    def _searchGoodPlaceToBuild(radius: int = 32, timeLimit: int = 2, listener: callable = lambda:None, **kwargs) -> list:
         """Search good places to build"""
         center = Player.getPlayer().getPos()
         center = [int(center.x), int(center.y), int(center.z)]
 
         shape = kwargs.get('shape', [radius, radius, radius])
-        steps = kwargs.get('steps', [1, 5, 1])
+        steps = kwargs.get('steps', [1, 1, 1])
 
         products = Explorer.iteratePos(center, shape, steps)
         places = []
@@ -45,19 +45,19 @@ class Explorer:
         for pos in products:
             listener()
             if time.time() - start > timeLimit: break
-            if Explorer.goodPlaceToBuild(pos, range_): places.append(pos)
+            if Explorer.placeablePlace(pos): places.append(pos)
 
         return places
                 
     
     @staticmethod
-    def searchGoodPlaceToBuild(radius: int = 32, range_: int = 1, **kwargs) -> list:
+    def searchGoodPlaceToBuild(radius: int = 32, **kwargs) -> list:
         """Search good places to build"""
 
         listener = Script.scriptListener('searchGoodPlaceToBuild')
         error = None
         try:
-            return Explorer._searchGoodPlaceToBuild(radius, listener=listener, range_ = range_, **kwargs)
+            return Explorer._searchGoodPlaceToBuild(radius, listener=listener, **kwargs)
         except Exception as e:
             error = e
         finally:
@@ -68,27 +68,20 @@ class Explorer:
 
 
     @staticmethod
-    def goodPlaceToBuild(pos: int, range_: int = 1) -> bool:
-        """Check if pos is a good place to build"""
+    def placeablePlace(pos: int) -> bool:
+        """Check if pos is a place that can be built"""
+
+        if Block.getBlock(pos).isSolid: return False
         
-        # 3x3 with max of 1 block of height difference
-        min_ = -range_
-        max_ = range_ + 1
-        walk = Walk(pos, pos)
-        positions = []
-        for x, z in itertools.product(range(min_, max_), range(min_, max_)):
-            pos_ = walk.getWalkablePos([pos[0]+x, pos[1], pos[2]+z], pos)
-            if pos_ == None: return False
-            positions.append(pos_)
+        # check if there is a solid block around pos
+        for x, y, z in itertools.product([-1, 0, 1], repeat=3):
+            if x == y == z == 0: continue
+            if Block.getBlock([pos[0]+x, pos[1]+y, pos[2]+z]).isSolid:
+                return True
 
-        max__ = max(positions, key=lambda p: p[1])[1]
-        min__ = min(positions, key=lambda p: p[1])[1]
-
-        if max__ - min__ > 1: return False
-
-        return True
-
-
+        return False
+        
+        
     @staticmethod
     def getFloor(pos: list) -> list:
         """Get the floor of pos"""

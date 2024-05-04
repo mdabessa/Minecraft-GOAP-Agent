@@ -28,6 +28,10 @@ class FailedToBreakError(Exception):
     """Raised when the block failed to break."""
     pass
 
+class FailedToPlaceError(Exception):
+    """Raised when the block failed to place."""
+    pass
+
 
 class Action:
     """A class to handle actions"""
@@ -201,24 +205,18 @@ class Action:
                 # this can make the player place blocks under them
                 Action.jump()
 
-            while True:
-                player.lookAt(point[0], point[1], point[2])
-                KeyBind.pressKey('key.mouse.right')
-                Client.waitTick(1)
-                KeyBind.releaseKey('key.mouse.right')
-                Client.waitTick(1)
-                
-                player = Player.getPlayer()
-                vel = player.getVelocity()
-                if vel.y < 0.1:
-                    break
+            player.lookAt(point[0], point[1], point[2])
+            KeyBind.pressKey('key.mouse.right')
+            Client.waitTick(1)
+            KeyBind.releaseKey('key.mouse.right')
+            Client.waitTick(1)
 
             _block = Block.getBlock(pos)
             if _block.isSolid:
                 break
 
             if time.time() - start > 2:
-                raise FailedToBreakError(f'Failed to place {blockId} at {pos}')
+                raise FailedToPlaceError(f'Failed to place {blockId} at {pos}')
 
 
     @staticmethod

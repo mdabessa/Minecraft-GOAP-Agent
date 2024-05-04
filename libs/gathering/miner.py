@@ -124,7 +124,7 @@ class Miner:
         """Go to the mine place"""
         minePlace = Miner.getMinePlace()
         if minePlace == None:
-            minePlace = Explorer.searchGoodPlaceToBuild(radius=32, range_=2) # center of a 5x5 flat area
+            minePlace = Explorer.searchGoodPlaceToBuild(radius=32) # center of a 5x5 flat area
             if len(minePlace) == 0:
                 raise Exception('No place found to start mining')
             

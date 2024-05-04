@@ -10,7 +10,7 @@ if __name__ == '':
     from libs.utils.dictionary import Dictionary
     from libs.state import State, Waypoint
     from libs.inventory import Inv
-    from libs.actions import Action
+    from libs.actions import Action, BlockNotVisibleError
     from libs.walk import Walk
     from libs.explorer import Explorer
 
@@ -148,18 +148,27 @@ class Craft:
         if count <= 0:
             Craft.craft(id='minecraft:crafting_table', count=1)
 
-        pos = Player.getPlayer().getPos()
-        pos = World.getBlock(int(pos.x), int(pos.y), int(pos.z)).getBlockPos()
         places = Explorer.searchGoodPlaceToBuild(radius=16)
-        if len(places) == 0:
-            raise CraftingError('Exploration function not implemented yet') # TODO: implement exploration function
-        
-        place = places[0]
-        region = Region.createRegion(place, 3)
-        Walk.walkTo(region)
-        Action.placeBlock(place, 'minecraft:crafting_table')
-        Craft.setCraftingPlace(place)
-        Time.sleep(Craft.interactionDelay)
+
+        while True:
+            if len(places) == 0:
+                # TODO: Implement a exploration algorithm to find a place to build a crafting table
+                raise CraftingError('No place found to build a crafting table')
+
+            pos = Player.getPlayer().getPos()
+            pos = [int(pos.x), int(pos.y), int(pos.z)]
+            places.sort(key=lambda p: Calc.distance(pos, p))
+            place = places.pop(0)
+
+            try:
+                region = Region.createRegion(place, 3)
+                Walk.walkTo(region)
+                Action.placeBlock(place, 'minecraft:crafting_table')
+                Craft.setCraftingPlace(place)
+                Time.sleep(Craft.interactionDelay)
+                break
+            except BlockNotVisibleError:
+                Logger.info('Failed to build a crafting table at ' + str(place))
 
 
     @staticmethod
