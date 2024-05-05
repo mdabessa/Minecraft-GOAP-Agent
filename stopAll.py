@@ -9,6 +9,7 @@ if __name__ == "":
     from libs.scripts import Script
 
 require('scripts', globals())
+require('utils.logger', globals())
 
 
 len_ = len(Script.getScripts())
