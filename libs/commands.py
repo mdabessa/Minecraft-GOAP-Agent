@@ -262,6 +262,7 @@ def test(testName: str = None,
         quantity: int = 1, timeoutSec: int = 240,
         *args, **kwargs):
     """Run a test"""
+    timeoutSec = int(timeoutSec)
 
     if testName is None:
         Logger.print('Usage: test <testName>')
