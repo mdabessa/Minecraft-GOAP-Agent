@@ -99,16 +99,16 @@ class Action:
                 else:
                     point = [block.pos[0] + 0.5, block.pos[1] + 0.5, block.pos[2] + 0.5]
 
-                player.lookAt(point[0], point[1], point[2])
                 while True:
                     listener()
+                    player.lookAt(point[0], point[1], point[2])
                 
                     _block = Block.getBlock(p)
                     if _block.id != block.id:
                         break
 
                     KeyBind.pressKey('key.mouse.left')
-                    Client.waitTick(1)
+                    # Client.waitTick(1)
                 
                 KeyBind.releaseKey('key.mouse.left')
 
