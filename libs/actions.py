@@ -108,7 +108,7 @@ class Action:
                         break
 
                     KeyBind.pressKey('key.mouse.left')
-                    # Client.waitTick(1)
+                    Client.waitTick(1)
                 
                 KeyBind.releaseKey('key.mouse.left')
 
