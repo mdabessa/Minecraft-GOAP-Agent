@@ -78,8 +78,12 @@ class Block:
         return faces
     
 
-    def getVisiblePoints(self, fromPos:list = None, resolution: int = 3, transparent: bool = False, opposite: bool = False) -> list[list[list[float]]]:
+    def getVisiblePoints(self, fromPos:list = None, resolution: int = 3, transparent: bool = False, solid: bool = False, opposite: bool = False) -> list[list[list[float]]]:
         """Get visible points of a block"""
+        if transparent:
+            # TODO: implement transparent visibility
+            raise NotImplementedError('Transparent visibility is not implemented yet')
+        
         if fromPos is None:
             fromPos = Player.getPlayer().getPos()
             # player eye pos
@@ -87,13 +91,11 @@ class Block:
 
         faces = self.getFaces(fromPos)
         faces = [face for face in faces if face['facing'] != opposite]
-        if transparent:
-            # TODO: implement transparent visibility
-            raise NotImplementedError('Transparent visibility is not implemented yet')
-
 
         points = []
         for face in faces:
+            if solid and not face['neighbor'].isSolid: continue
+
             for i, j in itertools.product(range(resolution), range(resolution)):
                 point = face['pos'][:]
                 index = [0, 1, 2]
@@ -132,12 +134,12 @@ class Block:
         return points
 
 
-    def getInteractPoint(self, fromPos: list = None, resolution: int = 3, opposite: bool = False) -> list:
+    def getInteractPoint(self, fromPos: list = None, resolution: int = 3, solid: bool = False, opposite: bool = False) -> list:
         """Get the best interact point of a block"""
         if resolution < 2:
             raise ValueError('Resolution must be greater than 1')
     
-        points = self.getVisiblePoints(fromPos, resolution, opposite=opposite)
+        points = self.getVisiblePoints(fromPos, resolution, opposite=opposite, solid=solid)
         if len(points) == 0: return None
 
         grid = {}

@@ -187,7 +187,7 @@ class Action:
         if block.isSolid:
             raise PositionNotValidError(f'Position {pos} is not a valid position to place {blockId}')
         
-        point = block.getInteractPoint(opposite=True)
+        point = block.getInteractPoint(opposite=True, solid=True)
         if point == None:
             raise BlockNotVisibleError(f'Block at {pos} does not have visible support faces to place {blockId}')
 
