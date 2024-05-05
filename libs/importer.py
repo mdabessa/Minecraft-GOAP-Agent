@@ -20,7 +20,8 @@ def require(lib: str, __globals):
     assert os.path.exists(file), f'Library [{lib}]({file}) does not exist.'
 
     with open(file, 'r') as f:
-        exec(f.read(), __globals)
+        code = compile(f.read(), file, 'exec')
+        exec(code, __globals)
     
     
     LIBS[lib] = file
