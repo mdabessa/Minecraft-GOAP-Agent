@@ -10,7 +10,7 @@ if __name__ == '':
     from libs.utils.dictionary import Dictionary
     from libs.state import State, Waypoint
     from libs.inventory import Inv
-    from libs.actions import Action, BlockNotVisibleError
+    from libs.actions import Action, BlockNotVisibleError, FailedToPlaceError
     from libs.walk import Walk
     from libs.explorer import Explorer
 
@@ -182,7 +182,7 @@ class Craft:
                 Craft.setCraftingPlace(place)
                 Time.sleep(Craft.interactionDelay)
                 break
-            except BlockNotVisibleError:
+            except (BlockNotVisibleError, FailedToPlaceError):
                 Logger.info('Failed to build a crafting table at ' + str(place))
 
 
