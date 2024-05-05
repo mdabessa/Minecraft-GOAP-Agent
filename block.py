@@ -32,6 +32,7 @@ Logger.print(block.pos)
 Logger.print(f'isAir: {block.isAir}')
 Logger.print(f'isLiquid: {block.isLiquid}')
 Logger.print(f'isOpaque: {block.isOpaque}')
+Logger.print(f'isSolid: {block.isSolid}')
 
 Logger.print(Style.GOLD + "Player Info")
 Logger.print('Pitch: ' + str(pitch))
