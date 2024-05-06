@@ -199,18 +199,27 @@ class Test:
             'args': args,
             'kwargs': kwargs,
         }
+        error = None
+        try:
+            start = Player.getPlayer().getPos()
+            start = [int(start.x), int(start.y), int(start.z)]
 
-        start = Player.getPlayer().getPos()
-        start = [int(start.x), int(start.y), int(start.z)]
-        
-        end = [10**10, 0, 10**10]
-        end = Calc.pointOnLine(start, end, distance)
-        region = Region.createRegion(end, 16)
-        
-        Walk.walkTo(region, *args, **kwargs)
+            end = [10**10, 0, 10**10]
+            end = Calc.pointOnLine(start, end, distance)
+            region = Region.createRegion(end, 16)
+            
+            Walk.walkTo(region, *args, **kwargs)
 
-        data['start'] = start
-        data['end'] = region.getBounds()
+            data['start'] = start
+            data['end'] = region.getBounds()
+            Logger.print(f'TestWalk {Style.GREEN}success!')
+        
+        except Exception as e:
+            Logger.print(f'TestWalk {Style.RED}failed!')
+            error = e
+
+        if error is not None:
+            raise error
 
         return data
 
@@ -229,7 +238,9 @@ class Test:
         error = None
         try:
             Craft.craft(id=item, listener=listerner)
+            Logger.print(f'TestCraft {Style.GREEN}success!')
         except Exception as e:
+            Logger.print(f'TestCraft {Style.RED}failed!')
             error = e
         finally:
             Script.stopScript('crafting')
@@ -249,23 +260,33 @@ class Test:
             'kwargs': kwargs,
         }
 
-        start = Player.getPlayer().getPos()
-        start = [int(start.x), int(start.y), int(start.z)]
-        
-        end = [10**10, 0, 10**10]
-        end = Calc.pointOnLine(start, end, 50)
-        end1 = [end[0] + 10, -64, end[2] + 10]
-        end2 = [end[0] - 10, 320, end[2] - 10]
-        region = Region(end1, end2)
+        error = None
+        try:
+            start = Player.getPlayer().getPos()
+            start = [int(start.x), int(start.y), int(start.z)]
+            
+            end = [10**10, 0, 10**10]
+            end = Calc.pointOnLine(start, end, 50)
+            end1 = [end[0] + 10, -64, end[2] + 10]
+            end2 = [end[0] - 10, 320, end[2] - 10]
+            region = Region(end1, end2)
 
-        walk = Walk(start, region, saveExplorationMap = True, *args, **kwargs)
-        path = walk.findPath()
-        if path is None:
-            raise Exception('Path not found')
+            walk = Walk(start, region, saveExplorationMap = True, *args, **kwargs)
+            path = walk.findPath()
+            if path is None:
+                raise Exception('Path not found')
 
-        data['start'] = start
-        data['end'] = region.getBounds()
-        data['pathLength'] = len(path)
-        data['walkConfig'] = walk.getConfig()
+            data['start'] = start
+            data['end'] = region.getBounds()
+            data['pathLength'] = len(path)
+            data['walkConfig'] = walk.getConfig()
+            Logger.print(f'TestPathfinder {Style.GREEN}success!')
+
+        except Exception as e:
+            Logger.print(f'TestPathfinder {Style.RED}failed!')
+            error = e
+
+        if error is not None:
+            raise error
 
         return data
