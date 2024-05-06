@@ -236,6 +236,7 @@ class Craft:
     @staticmethod
     def goToCraftingTable():
         """Go to the crafting table"""
+        Logger.info('Going to the crafting table')
         c = 0
         while True:
             c += 1
@@ -270,6 +271,7 @@ class Craft:
             if len(craftingTable) != 0:
                 region = Region.createRegion(craftingTable[0], 3)
                 Walk.walkTo(region)
+                Logger.info('Crafting table found')
                 break    
             else:
                 Craft.resetCraftingPlace()
@@ -436,6 +438,7 @@ class Craft:
         if id in Craft.collectionMethods:
             func = Craft.collectionMethods[id]
             func(id, count)
+            Logger.info(f'Collected {id} x{count}')
             return
 
         if len(recipes) == 0:
@@ -449,8 +452,10 @@ class Craft:
             listener()
             invItems = Inv.countItems()
             c = invItems.get(id, 0)
-            # Logger.info(f'Crafting {id} x{count} ({c}/{objective})')
-            if c >= objective: break
+            Logger.debug(f'Crafting {id} x{count} ({c}/{objective})')
+            if c >= objective:
+                Logger.info(f'Crafted {id} x{count}')
+                break
 
             recipeItems = recipe.countIngredients(count)
             recalc = False
