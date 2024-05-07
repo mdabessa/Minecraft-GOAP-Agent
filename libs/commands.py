@@ -329,3 +329,11 @@ def test(testName: str = None,
 def clearTest(*args, **kwargs):
     clearTestReports()
     Logger.print('Tests data cleared')
+
+
+@Command.command('rndTp', help='Teleport to a random position')
+def rndTp(*args, **kwargs):
+    Test.randomTP()
+    pos = Player.getPlayer().getPos()
+    
+    Logger.print(f'Teleported to {Style.AQUA}{pos.x} {pos.y} {pos.z}')

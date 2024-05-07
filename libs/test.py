@@ -146,10 +146,8 @@ class Test:
 
 
     @staticmethod
-    def resetEnvironment():
-        """Reset the environment"""
-        Chat.say('/gamemode creative')
-        Chat.say('/clear')
+    def randomTP():
+        """Random teleport"""
 
         pos = Player.getPlayer().getPos()
         pos = [math.floor(pos.x), math.floor(pos.y), math.floor(pos.z)]
@@ -175,6 +173,15 @@ class Test:
         floor = Explorer.getFloor(pos)
         Chat.say(f'/tp {floor[0]} {floor[1]+1} {floor[2]}')
         time.sleep(1)
+
+
+    @staticmethod
+    def resetEnvironment():
+        """Reset the environment"""
+        Chat.say('/gamemode creative')
+        Chat.say('/clear')
+
+        Test.randomTP()
 
         Chat.say('/gamemode survival')
 
