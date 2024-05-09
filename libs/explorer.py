@@ -90,7 +90,7 @@ class Explorer:
         
         for y in range(max_, min_, -1):
             block = Block.getBlock([pos[0], y, pos[2]])
-            if block == None: continue
+            if block is None: continue
 
             if block.isSolid or block.isLiquid:
                 return [pos[0], y, pos[2]]
