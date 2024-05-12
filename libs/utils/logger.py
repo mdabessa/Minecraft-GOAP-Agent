@@ -1,4 +1,6 @@
 from __future__ import annotations
+import os
+import datetime
 
 if __name__ == '':
     from JsMacrosAC import *
@@ -29,6 +31,7 @@ class Style:
     ITALIC = '&o'
     RESET = '&r'
 
+
 class LoggerLevel:
     """Enum for logger levels"""
     DEBUG = 0
@@ -40,6 +43,7 @@ class LoggerLevel:
 class Logger:
     """Logger class to log messages to the game"""
     level = LoggerLevel.INFO
+    logPath = './config/jsMacros/Macros/logs/latest.log'
 
     @staticmethod
     def printStyles() -> None:
@@ -59,6 +63,9 @@ class Logger:
         """Prints a debug message to the game"""
         if cls.level <= LoggerLevel.DEBUG:
             cls.print(f'{Style.WHITE}[{Style.DARK_GRAY}DEBUG{Style.WHITE}] {message}')
+        
+        date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+        Logger.save(f'{date} [DEBUG] {message}')
 
     @classmethod
     def info(cls, message: str) -> None:
@@ -66,14 +73,33 @@ class Logger:
         if cls.level <= LoggerLevel.INFO:
             cls.print(f'{Style.WHITE}[{Style.GRAY}INFO{Style.WHITE}] {message}')
 
+        date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+        Logger.save(f'{date} [INFO] {message}')
+
     @classmethod
     def warning(cls, message: str) -> None:
         """Prints a warning message to the game"""
         if cls.level <= LoggerLevel.WARNING:
             cls.print(f'{Style.WHITE}[{Style.YELLOW}WARNING{Style.WHITE}] {message}')
         
+        date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+        Logger.save(f'{date} [WARNING] {message}')
+        
     @classmethod
     def error(cls, message: str) -> None:
         """Prints an error message to the game"""
         if cls.level <= LoggerLevel.ERROR:
             cls.print(f'{Style.WHITE}[{Style.DARK_RED}ERROR{Style.WHITE}] {message}')
+        
+        date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+        Logger.save(f'{date} [ERROR] {message}')
+
+    @classmethod
+    def save(cls, message: str) -> None:
+        """Saves a message to the log file"""
+        path = os.path.dirname(cls.logPath)
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        with open(cls.logPath, 'a', encoding='utf-8') as file:
+            file.write(f'{message}\n')
