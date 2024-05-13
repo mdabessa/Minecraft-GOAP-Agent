@@ -1,2 +1,7 @@
 TODO: pathfinding incremment heuristic to break blocks / in test always use tools
 TODO: exploration function
+FIXME: pathfinding bug when coming out of the water
+TODO: better tree gathering
+FIXME: when breaking a block in the water, the player drowns
+TODO: implement swim
+FIXME: minecraft:cocoa is solid
