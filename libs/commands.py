@@ -200,10 +200,10 @@ def waypoint(subcommand: str = None, *args, **kwargs):
         if wp is None:
             raise CommandArgumentError(f'Waypoint "{name}" not found')
         
-        if wp['dimension'] != World.getDimension():
+        if wp.dimension != World.getDimension():
             raise CommandArgumentError(f'Waypoint "{name}" is in another dimension')
-        
-        text = f'/tp @p {pos["x"]} {pos["y"]} {pos["z"]}'
+
+        text = f'/tp @p {wp.x} {wp.y} {wp.z}'
         Chat.say(text)
 
     else:
