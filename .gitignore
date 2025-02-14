@@ -2,6 +2,7 @@
 /states/*.json
 /recipes/*.json
 /exploration/*/
+/JsMacrosAC/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
