@@ -56,7 +56,10 @@ class Wood:
     @staticmethod
     @Craft.collectionMethod(Dictionary.getIds('minecraft:logs'))
     def gatherWood(_, quantity: int = 1, exploreIfNoWood: bool = True):
-        """Gather wood"""
+        """Gather wood
+        :param quantity: the amount of wood to gather
+        :param exploreIfNoWood: if True, explore if no wood is found
+        """
         if quantity <= 0:
             raise ValueError('quantity must be greater than 0')
         

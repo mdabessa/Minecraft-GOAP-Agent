@@ -9,6 +9,7 @@ if __name__ == '':
     from libs.scripts import Script
     from libs.state import State, Waypoint
     from libs.walk import Walk
+    from libs.gathering.wood import Wood
     from libs.craft import Craft
     from libs.test import Test, clearTestReports
 
@@ -337,3 +338,18 @@ def rndTp(*args, **kwargs):
     pos = Player.getPlayer().getPos()
     
     Logger.print(f'Teleported to {Style.AQUA}{pos.x} {pos.y} {pos.z}')
+
+
+@Command.command('gatherWood', aliases=['gw'], help='Gather wood')
+def gatherWood(quantity: int = 1, exploreIfNoWood: bool = True, *args, **kwargs):
+    quantity = int(quantity)
+
+    if quantity <= 0:
+        raise CommandArgumentError('quantity must be greater than 0')
+
+    Logger.print(f'Gathering {quantity} wood')
+
+    Wood.gatherWood(quantity, exploreIfNoWood)
+
+    Logger.print(f'Gathered!')
+
