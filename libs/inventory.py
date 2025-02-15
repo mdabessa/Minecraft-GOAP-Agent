@@ -3,6 +3,7 @@ import math
 if __name__ == '':
     from JsMacrosAC import *
     from libs.utils.dictionary import Dictionary
+    from libs.utils.logger import Logger
 
 
 
@@ -155,14 +156,14 @@ class Inv:
 
 
     @staticmethod
-    def getToolLevel(tool: str) -> int:
+    def getToolLevel(tool_type: str) -> int:
         """Get the level of the tool"""
-        if 'wood' in tool: return 1
-        if 'stone' in tool: return 2
-        if 'gold' in tool: return 2
-        if 'iron' in tool: return 3
-        if 'diamond' in tool: return 4
-        if 'netherite' in tool: return 5
+        if 'wood' in tool_type: return 1
+        if 'stone' in tool_type: return 2
+        if 'gold' in tool_type: return 2
+        if 'iron' in tool_type: return 3
+        if 'diamond' in tool_type: return 4
+        if 'netherite' in tool_type: return 5
         return -1
     
 
@@ -263,3 +264,24 @@ class Inv:
         inventory = Player.openInventory()
         inventory.setSelectedHotbarSlotIndex(Inv.hotbarSortMap['food'])
         Client.waitTick(1)
+
+    @staticmethod
+    def getToolDurability(tool: str) -> int:
+        """Get the tool health"""
+
+        Inv.selectTool(tool)
+        inventory = Player.openInventory()
+        map = inventory.getMap()
+        item = inventory.getSlot(map['hotbar'][Inv.hotbarSortMap[tool]])
+        return item.getDurability()
+    
+
+    @staticmethod
+    def getActualToolLevel(tool: str) -> int:
+        """Get the actual tool level"""
+        Inv.sortHotbar()
+
+        inventory = Player.openInventory()
+        map = inventory.getMap()
+        item = inventory.getSlot(map['hotbar'][Inv.hotbarSortMap[tool]])
+        return Inv.getToolLevel(item.getItemId())
