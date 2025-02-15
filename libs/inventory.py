@@ -240,12 +240,13 @@ class Inv:
         Client.waitTick(1)
 
     @staticmethod
-    def selectTool(tool: str) -> int:
+    def selectTool(tool: str, sort: bool = True) -> int:
         """Go to the tool hotbar slot, select it and return the level of the tool"""
         if tool not in Inv.hotbarSortMap:
             raise Exception(f'Invalid tool {tool}')
-    
-        Inv.sortHotbar()
+
+        if sort:
+            Inv.sortHotbar()
     
         inventory = Player.openInventory()
         inventory.setSelectedHotbarSlotIndex(Inv.hotbarSortMap[tool])

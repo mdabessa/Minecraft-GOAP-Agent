@@ -79,7 +79,7 @@ class Action:
                 if safe:
                     betterTool = Inv.getBetterTool(p)
                     if betterTool != None:
-                        Inv.selectTool(betterTool['tool'])
+                        Inv.selectTool(betterTool['tool'], sort=False)
                         Client.waitTick(1)
                     else:
                         Inv.selectNonTool()
