@@ -159,11 +159,14 @@ class Action:
             raise error
 
     @staticmethod
-    def placeBlock(pos: list, blockId: str | list[str], moveToPlace: bool = True):
+    def placeBlock(pos: list, blockId: str | list[str], moveToPlace: bool = True, fastPlace: bool = False, faces: list = None):
         """Place a block at pos"""
     
         if isinstance(blockId, str):
             blockId = [blockId]
+
+        if faces is None:
+            faces = [1, 1, 1]
         
         items = Inv.countItems()
         item = None
@@ -187,7 +190,7 @@ class Action:
         if block.isSolid:
             raise PositionNotValidError(f'Position {pos} is not a valid position to place {blockId}')
         
-        point = block.getInteractPoint(opposite=True, solid=True)
+        point = block.getInteractPoint(opposite=True, solid=True,earlyReturn=fastPlace, faces=faces)
         if point == None:
             raise BlockNotVisibleError(f'Block at {pos} does not have visible support faces to place {blockId}')
 
@@ -213,7 +216,7 @@ class Action:
             Client.waitTick(1)
 
             _block = Block.getBlock(pos)
-            if _block.isSolid:
+            if _block.id in blockId:
                 break
 
             if time.time() - start > 2:

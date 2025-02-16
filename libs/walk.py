@@ -44,15 +44,19 @@ class Block:
         self.isLava = self.id == "minecraft:lava"
 
 
-    def getFaces(self, fromPos: list = None) -> list:
+    def getFaces(self, fromPos: list = None, faces: list = None) -> list[dict]:
         """Get the block faces of a block and if the face is facing the fromPos"""
         if fromPos is None:
             fromPos = Player.getPlayer().getPos()
             # player eye pos
             fromPos = [fromPos.x, fromPos.y+1.62, fromPos.z] # TODO: get the correct player eye pos 
 
-        faces = []
+        if faces is None:
+            faces = [1, 1, 1]
+
+        faces_ = []
         for i in range(3):
+            if faces[i] == 0: continue
             for j in range(-1, 2, 2):
                 pos = self.pos[:]
                 pos[i] += j
@@ -73,23 +77,28 @@ class Block:
                     'face': i,
                 }
     
-                faces.append(face)
+                faces_.append(face)
 
-        return faces
+        return faces_
     
 
-    def getVisiblePoints(self, fromPos:list = None, resolution: int = 3, transparent: bool = False, solid: bool = False, opposite: bool = False) -> list[list[list[float]]]:
+    def getVisiblePoints(self, fromPos:list = None, resolution: int = 3, 
+                         transparent: bool = False, solid: bool = False, opposite: bool = False,
+                         earlyReturn: bool = False, faces: list = None) -> list[list[list[float]]]:
         """Get visible points of a block"""
         if transparent:
             # TODO: implement transparent visibility
             raise NotImplementedError('Transparent visibility is not implemented yet')
         
+        if faces is None:
+            faces = [1, 1, 1]
+
         if fromPos is None:
             fromPos = Player.getPlayer().getPos()
             # player eye pos
             fromPos = [fromPos.x, fromPos.y+1.62, fromPos.z]
 
-        faces = self.getFaces(fromPos)
+        faces = self.getFaces(fromPos, faces)
         faces = [face for face in faces if face['facing'] != opposite]
 
         points = []
@@ -126,6 +135,7 @@ class Block:
                     if blockPos != self.pos: continue
 
                 points.append(point[:])
+                if earlyReturn: return points
             
         # Logger.debug(f'Points: {len(points)}/{(resolution)**2 * len(faces)}')
         # for point in points:
@@ -134,12 +144,15 @@ class Block:
         return points
 
 
-    def getInteractPoint(self, fromPos: list = None, resolution: int = 3, solid: bool = False, opposite: bool = False) -> list:
+    def getInteractPoint(self, fromPos: list = None, resolution: int = 3, 
+                         solid: bool = False, opposite: bool = False,
+                         earlyReturn: bool = False,
+                         faces: list = None) -> list[float] | None:
         """Get the best interact point of a block"""
         if resolution < 2:
             raise ValueError('Resolution must be greater than 1')
     
-        points = self.getVisiblePoints(fromPos, resolution, opposite=opposite, solid=solid)
+        points = self.getVisiblePoints(fromPos, resolution, opposite=opposite, solid=solid, earlyReturn=earlyReturn, faces=faces)
         if len(points) == 0: return None
 
         grid = {}
