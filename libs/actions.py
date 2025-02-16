@@ -61,7 +61,7 @@ class Action:
     
 
     @staticmethod
-    def breakBlock(pos: list[int] | list[list[int]], safe: bool = True):
+    def breakBlock(pos: list[int] | list[list[int]], safe: bool = True, sortTools: bool = True):
         """Break a block at pos"""
         if not isinstance(pos[0], list):
             pos = [pos]
@@ -76,10 +76,10 @@ class Action:
         try:
             for p in pos:
                 p = [math.floor(p[0]), math.floor(p[1]), math.floor(p[2])]
-                if safe:
+                if sortTools:
                     betterTool = Inv.getBetterTool(p)
                     if betterTool != None:
-                        Inv.selectTool(betterTool['tool'], sort=False)
+                        Inv.selectTool(betterTool['tool'])
                         Client.waitTick(1)
                     else:
                         Inv.selectNonTool()
