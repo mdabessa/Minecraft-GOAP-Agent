@@ -43,7 +43,6 @@ class Inv:
         player = Player.getPlayer()
         map = inventory.getMap()
 
-        Inv.sortHotbar()
         tools = []
         for tool in Inv.tools:
             item = inventory.getSlot(map['hotbar'][Inv.hotbarSortMap[tool]])
@@ -241,14 +240,11 @@ class Inv:
         Client.waitTick(1)
 
     @staticmethod
-    def selectTool(tool: str, sort: bool = True) -> int:
+    def selectTool(tool: str) -> int:
         """Go to the tool hotbar slot, select it and return the level of the tool"""
         if tool not in Inv.hotbarSortMap:
             raise Exception(f'Invalid tool {tool}')
 
-        if sort:
-            Inv.sortHotbar()
-    
         inventory = Player.openInventory()
         inventory.setSelectedHotbarSlotIndex(Inv.hotbarSortMap[tool])
         Client.waitTick(1)
@@ -279,7 +275,6 @@ class Inv:
     @staticmethod
     def getActualToolLevel(tool: str) -> int:
         """Get the actual tool level"""
-        Inv.sortHotbar()
 
         inventory = Player.openInventory()
         map = inventory.getMap()
