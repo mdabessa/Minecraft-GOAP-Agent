@@ -10,6 +10,7 @@ if __name__ == '':
     from libs.state import State, Waypoint
     from libs.walk import Walk
     from libs.gathering.wood import Wood
+    from libs.gathering.miner import Miner
     from libs.craft import Craft
     from libs.test import Test, clearTestReports
 
@@ -349,7 +350,7 @@ def gatherWood(quantity: int = 1, exploreIfNoWood: bool = True, *args, **kwargs)
 
     Logger.print(f'Gathering {quantity} wood')
 
-    Wood.gatherWood(quantity, exploreIfNoWood)
+    Wood.gatherWood(quantity=quantity, exploreIfNoWood=exploreIfNoWood)
 
     Logger.print(f'Gathered!')
 
