@@ -29,6 +29,7 @@ GROUPS = {
 }
 
 class Dictionary:
+    @staticmethod
     def getGroup(name: str) -> str:
         """Get the group/tag of a item"""
         for group in GROUPS:
@@ -37,6 +38,7 @@ class Dictionary:
         
         return name
 
+    @staticmethod
     def getIds(group: str) -> list:
         """Get all items in a group/tag"""
         if group in GROUPS:
