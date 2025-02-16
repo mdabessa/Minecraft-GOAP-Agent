@@ -39,6 +39,25 @@ GROUPS = {
         'minecraft:azalea_leaves',
         'minecraft:flowering_azalea_leaves',
     ],
+
+    "minecraft:saplings": [
+        'minecraft:oak_sapling',
+        'minecraft:birch_sapling',
+        'minecraft:spruce_sapling',
+        'minecraft:jungle_sapling',
+        'minecraft:acacia_sapling',
+        'minecraft:dark_oak_sapling',
+        'minecraft:mangrove_sapling',
+        'minecraft:cherry_sapling',
+    ],
+
+    "minecraft:dirt": [
+        'minecraft:dirt',
+        'minecraft:dirt_path',
+        'minecraft:coarse_dirt',
+        'minecraft:rooted_dirt',
+        'minecraft:grass_block',
+    ],
 }
 
 class Dictionary:
