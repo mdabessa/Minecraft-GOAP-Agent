@@ -207,6 +207,19 @@ class Block:
 
         return block
     
+    @staticmethod
+    def getLookAtBlock() -> Block | None:
+        reach = Player.getReach()
+        block = Player.rayTraceBlock(reach, True)
+
+        if block is None:
+            return None
+        
+        pos = block.getBlockPos()
+        pos = [pos.getX(), pos.getY(), pos.getZ()]
+
+        return Block.getBlock(pos)
+
 
 class Node:
     """A node in the walk graph"""
