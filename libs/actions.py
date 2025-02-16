@@ -61,7 +61,50 @@ class Action:
     
 
     @staticmethod
-    def breakBlock(pos: list[int] | list[list[int]], safe: bool = True, sortTools: bool = True):
+    def break_(listener: callable = None):
+        """Break looking at block"""
+        player = Player.getPlayer()
+        yaw = player.getYaw()
+        pitch = player.getPitch()
+
+        blockLook = Block.getLookAtBlock()
+        if blockLook is None or blockLook.isAir:
+            return
+        
+        if blockLook.isLiquid:
+            raise PositionNotValidError('Cannot break liquid')
+
+        pos = blockLook.pos
+        Inv.sortHotbar()
+        betterTool = Inv.getBetterTool(blockLook.pos)
+        if betterTool != None:
+            Inv.selectTool(betterTool['tool'], )
+            Client.waitTick(1)
+        else:
+            Inv.selectNonTool()
+            Client.waitTick(1)
+
+        while True:
+            if listener is not None:
+                try:
+                    listener()
+                except Exception as e:
+                    KeyBind.releaseKey('key.mouse.left')
+                    raise e
+            
+            player.lookAt(yaw, pitch)
+            KeyBind.pressKey('key.mouse.left')
+            Client.waitTick(1)
+
+            block = Block.getBlock(pos)
+            if block.id != blockLook.id:
+                break
+
+        KeyBind.releaseKey('key.mouse.left')
+
+
+    @staticmethod
+    def breakBlock(pos: list[int] | list[list[int]], safe: bool = True):
         """Break a block at pos"""
         if not isinstance(pos[0], list):
             pos = [pos]
@@ -76,14 +119,6 @@ class Action:
         try:
             for p in pos:
                 p = [math.floor(p[0]), math.floor(p[1]), math.floor(p[2])]
-                if sortTools:
-                    betterTool = Inv.getBetterTool(p)
-                    if betterTool != None:
-                        Inv.selectTool(betterTool['tool'])
-                        Client.waitTick(1)
-                    else:
-                        Inv.selectNonTool()
-                        Client.waitTick(1)
 
                 player = Player.getPlayer()
                 block = Block.getBlock(p)
@@ -102,15 +137,13 @@ class Action:
                 while True:
                     listener()
                     player.lookAt(point[0], point[1], point[2])
-                
-                    _block = Block.getBlock(p)
-                    if _block.id != block.id:
-                        break
-
-                    KeyBind.pressKey('key.mouse.left')
                     Client.waitTick(1)
-                
-                KeyBind.releaseKey('key.mouse.left')
+
+                    Action.break_(listener)
+
+                    block_ = Block.getBlock(p)
+                    if block_.id != block.id:
+                        break
 
         except Exception as e:
             error = e
