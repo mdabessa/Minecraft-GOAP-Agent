@@ -82,7 +82,7 @@ class Wood:
                 pos = [tree.x, tree.y, tree.z]
                 Logger.debug(f'Cutting tree at {pos}')
                 region = Region.createRegion(pos, 5)
-                Walk.walkTo(region, canPlace=False, canBreak=False)
+                Walk.walkTo(region, canPlace=False, allowListBreak=['minecraft:logs', 'minecraft:leaves'])
                 Wood.cutTree(pos)
                 Time.sleep(1000) # wait for the blocks to drop
                 Walk.collectDrops()
@@ -97,5 +97,3 @@ class Wood:
 
             else:
                 raise NoTreeFound('No trees found in the area') # TODO: explore function
-
-    
