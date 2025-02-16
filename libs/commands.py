@@ -353,3 +353,6 @@ def gatherWood(quantity: int = 1, exploreIfNoWood: bool = True, *args, **kwargs)
 
     Logger.print(f'Gathered!')
 
+@Command.command('mine', help='Mine macro')
+def mine(*args, **kwargs):
+    Miner.mine()
