@@ -10,6 +10,7 @@ if __name__ == "":
     from JsMacrosAC import *
     from libs.utils.logger import Logger, Style
     from libs.utils.calc import Calc, Region
+    from libs.utils.dictionary import Dictionary
     from libs.scripts import Script
     from libs.actions import Action
     from libs.inventory import Inv
@@ -31,17 +32,17 @@ class PathNotFoundError(Exception):
 
 class Block:
     """A block in the world"""
-    def __init__(self, state: World.BlockStateHelper, pos: list[int]):
-        self.id = state.getId()
-        self.pos = pos
+    def __init__(self, state, pos: list[int]):
+        self.id: str = state.getId()
+        self.pos: list[int] = pos
 
-        self.isAir = state.isAir()
-        self.isOpaque = state.isOpaque()
-        self.isLiquid = state.isLiquid()
-        self.isSolid = state.isSolid()
+        self.isAir: bool = state.isAir()
+        self.isOpaque: bool = state.isOpaque()
+        self.isLiquid: bool = state.isLiquid()
+        self.isSolid: bool = state.isSolid()
 
-        self.isWater = self.id == "minecraft:water"
-        self.isLava = self.id == "minecraft:lava"
+        self.isWater: bool = self.id == "minecraft:water"
+        self.isLava: bool = self.id == "minecraft:lava"
 
 
     def getFaces(self, fromPos: list = None, faces: list = None) -> list[dict]:
@@ -262,6 +263,7 @@ class Walk:
     def __init__(self, startPos: list[int], endPos: list[int] | Region,
             maxJump: int = 1, maxFall: int = 5,
             canPlace: bool = True, canBreak: bool = True,
+            allowListBreak: list[str] = None, denyListBreak: list[str] = None,
             reverse: bool = False, weightMask: float = 1.0,
             maxPathLength: int = 50,
             timeLimit: int = 5, saveExplorationMap: str = None,
@@ -274,6 +276,8 @@ class Walk:
         maxFall: the maximum number of blocks that the player can fall
         canPlace: if the player can place blocks
         canBreak: if the player can break blocks
+        allowListBreak: the list of blocks that the player can break
+        denyListBreak: the list of blocks that the player can't break
         reverse: if the player are leaving the end region
         weightMask: the weight to each break and place action
         maxPathLength: the maximum distance of the path, if the path is longer than this, the search will be split in multiple searches
@@ -300,6 +304,8 @@ class Walk:
         self.maxFall = maxFall
         self.canPlace = canPlace
         self.canBreak = canBreak
+        self.allowListBreak = allowListBreak if allowListBreak is not None else []
+        self.denyListBreak = denyListBreak if denyListBreak is not None else []
         self.reverse = reverse
         self.weightMask = weightMask
         self.maxPathLength = maxPathLength
@@ -311,6 +317,8 @@ class Walk:
             'minecraft:grass_block', 'minecraft:dirt', 'minecraft:cobblestone',
         ]
 
+        self.allowListBreak = [x for id in self.allowListBreak for x in Dictionary.getIds(id)]
+        self.denyListBreak = [x for id in self.denyListBreak for x in Dictionary.getIds(id)]
 
         self.denyList = set() # list of positions that the player stucked
         self.explorationMap = {}
@@ -470,7 +478,10 @@ class Walk:
         newPos = [node.position[0], node.position[1]-1, node.position[2]]
 
         block = Block.getBlock(newPos, mask)
+
         if not block.isSolid: return []
+        if block.id in self.denyListBreak: return []
+        if self.allowListBreak and block.id not in self.allowListBreak: return []
 
         block = Block.createMaskBlock(newPos, place=False)
         mask[encodePos(newPos)] = block
@@ -483,7 +494,7 @@ class Walk:
                 'pos': newPos,
             }
 
-            return [_node]        
+            return [_node]
         return []
 
 
@@ -502,6 +513,9 @@ class Walk:
             block = Block.getBlock(pos, mask)
             block1 = Block.getBlock(pos1, mask)
             if not block.isSolid or not block1.isSolid: continue
+            if block.id in self.denyListBreak or block1.id in self.denyListBreak: continue
+            if self.allowListBreak:
+                if block.id not in self.allowListBreak or block1.id not in self.allowListBreak: continue
 
             block = Block.createMaskBlock(pos, place=False)
             block1 = Block.createMaskBlock(pos1, place=False)
