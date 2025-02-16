@@ -1,10 +1,12 @@
+import math
+
 if __name__ == '':
     from JsMacrosAC import *
     from libs.utils.logger import Logger, Style
     from libs.utils.calc import Calc, Region
     from libs.utils.dictionary import Dictionary
     from libs.scripts import Script
-    from libs.walk import Walk
+    from libs.walk import Walk, Block
     from libs.actions import Action
     from libs.inventory import Inv
     from libs.craft import Craft
@@ -18,15 +20,32 @@ class NoTreeFound(Exception):
 class Wood:
     """A class to handle wood gathering"""
     @staticmethod
-    def isRoot(pos: list) -> bool:
-        """Check if pos is a root of a tree"""
-        floor = World.getBlock(int(pos[0]), int(pos[1]) - 1, int(pos[2]))
-        if floor == None: return False
-        return floor.getId() in ['minecraft:grass_block', 'minecraft:dirt']
+    def treeRoot(pos: list, maxHeight: int = 4) -> list:
+        """Check if pos is a tree and return the root position"""
+        floor = Block.getBlock([math.floor(pos[0]), math.floor(pos[1]) - 1, math.floor(pos[2])])
+        if floor == None: return []
 
+        if floor.id in ['minecraft:grass_block', 'minecraft:dirt']:
+            return pos
+
+        top = Block.getBlock([math.floor(pos[0]), math.floor(pos[1]) + 1, math.floor(pos[2])])
+        if top == None: return []
+
+        if floor.isAir and Dictionary.getGroup(top.id) in ['minecraft:logs', 'minecraft:leaves']:
+            for i in range(1, maxHeight + 1):
+                floor_ = [math.floor(pos[0]), math.floor(pos[1]) - i, math.floor(pos[2])]
+                block = Block.getBlock(floor_)
+                if block == None: return []
+                if block.isAir: continue
+                if block.id in ['minecraft:grass_block', 'minecraft:dirt']:
+                    return [floor_[0], floor_[1] + 1, floor_[2]]
+                
+                break
+    
+        return []
 
     @staticmethod
-    def searchTree(radius: int = 100) -> list:
+    def searchTree(radius: int = 100, maxTrees: int = 1) -> list:
         """Search for trees in a radius and return a list of positions of the roots"""
 
         pos = Player.getPlayer().getPos()
@@ -37,11 +56,18 @@ class Wood:
         for id in ids:
             blocks += World.findBlocksMatching(id, radius)
 
-        blocks = [b for b in blocks if Wood.isRoot([b.x, b.y, b.z])]
+        trees = []
+        for block in blocks:
+            tree = Wood.treeRoot([block.x, block.y, block.z])
+            if tree:
+                trees.append(tree)
 
-        blocks = sorted(blocks, key=lambda b: Calc.distance(pos, [b.x, b.y, b.z]))
+        trees = sorted(trees, key=lambda b: Calc.distance(pos, b))#[b.x, b.y, b.z]))
         
-        return blocks
+        if maxTrees > 0:
+            trees = trees[:maxTrees]
+
+        return trees
 
 
     @staticmethod
@@ -77,23 +103,24 @@ class Wood:
                 else:
                     raise NoTreeFound('No trees found in the area')
 
-            for tree in trees:
-                listener()
-                pos = [tree.x, tree.y, tree.z]
-                Logger.debug(f'Cutting tree at {pos}')
-                region = Region.createRegion(pos, 5)
+            pos = trees[0]
+
+            Logger.debug(f'Cutting tree at {pos}')
+            region = Region.createRegion(pos, 3)
+
+            try:
                 Walk.walkTo(region, canPlace=False, allowListBreak=['minecraft:logs', 'minecraft:leaves'])
-                Wood.cutTree(pos)
-                Time.sleep(1000) # wait for the blocks to drop
-                Walk.collectDrops()
-                
-                _count = Inv.countItems()
-                _count = _count.get('minecraft:logs', 0)
-                if _count >= count + quantity:
-                    break
+            except Exception as e:
+                Logger.debug(f'Error walking to {pos}: {e}')
+                continue
+            
+            Wood.cutTree(pos)
+
+            Time.sleep(1000) # wait for the blocks to drop
+            Walk.collectDrops()
+            
+            _count = Inv.countItems()
+            _count = _count.get('minecraft:logs', 0)
 
             if _count >= count + quantity:
                 break
-
-            else:
-                raise NoTreeFound('No trees found in the area') # TODO: explore function
