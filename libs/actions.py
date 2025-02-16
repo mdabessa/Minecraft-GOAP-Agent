@@ -4,6 +4,7 @@ import math
 if __name__ == "":
     from JsMacrosAC import *
     from libs.utils.calc import Calc, Region
+    from libs.utils.dictionary import Dictionary
     from libs.utils.logger import Logger
     from libs.scripts import Script
     from libs.inventory import Inv, NotEnoughItemsError
@@ -162,8 +163,11 @@ class Action:
         pos = Player.getPlayer().getPos()
         pos = [pos.x, pos.y, pos.z]
         reach = Player.getReach()
-
-        blocks = World.findBlocksMatching(blockId, 1)
+        
+        ids = Dictionary.getIds(blockId)
+        blocks = []
+        for id in ids:
+            blocks += World.findBlocksMatching(id, 1)
 
         blocks = [b for b in blocks if region.contains([b.x, b.y, b.z]) 
                 and Calc.distance(pos, [b.x, b.y, b.z]) <= reach]
@@ -175,10 +179,6 @@ class Action:
         try:
             for block in blocks:
                 listener()
-                block_ = Block.getBlock([math.floor(block.x), math.floor(block.y), math.floor(block.z)])
-                if not block_.isSolid: continue
-                if block_.id != blockId: continue
-        
                 Action.breakBlock([block.x, block.y, block.z], safe=safe)
                 Client.waitTick(1)
 
