@@ -138,7 +138,23 @@ class Miner:
     @staticmethod
     def placeTorch():
         """Place a torch"""
-        ...
+        player = Player.getPlayer()
+        pos = player.getPos()
+        yaw = player.getYaw()
+        pitch = player.getPitch()
+
+        pos = [math.floor(pos.x), math.floor(pos.y), math.floor(pos.z)]
+        light = World.getBlockLight(*pos)
+        
+        if light > 2: return
+
+        try:
+            Action.placeBlock(pos, 'minecraft:torch', moveToPlace=False, fastPlace=True, faces=[0, 1, 0]) # place on the ground
+
+            player.lookAt(yaw, pitch)
+        except NotEnoughItemsError:
+            pass
+
 
     @staticmethod
     def getBlockSource(id: str) -> str:
