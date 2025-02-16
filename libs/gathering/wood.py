@@ -116,8 +116,7 @@ class Wood:
             
             Wood.cutTree(pos)
 
-            Time.sleep(1000) # wait for the blocks to drop
-            Walk.collectDrops()
+            Walk.collectDrops(walkPathKwargs={'canPlace': False, 'allowListBreak': ['minecraft:logs', 'minecraft:leaves']})
             
             _count = Inv.countItems()
             _count = _count.get('minecraft:logs', 0)

@@ -834,8 +834,10 @@ class Walk:
     
 
     @staticmethod
-    def collectDrops(distance: int = 10, timeLimit: float = 0.5):
+    def collectDrops(distance: int = 10, timeLimit: float = 0.5, walkPathKwargs: dict = None):
         """  Collect all drops in a distance  """
+        walkPathKwargs = walkPathKwargs if walkPathKwargs is not None else {}
+
         pos = Player.getPlayer().getPos()
         pos = [pos.x, pos.y, pos.z]
 
@@ -846,7 +848,7 @@ class Walk:
         for e in entities:
             pos = [e.x, e.y, e.z]
             try:
-                Walk.walkTo(pos, maxPathLength=distance*2, timeLimit=timeLimit)
+                Walk.walkTo(pos, maxPathLength=distance*2, timeLimit=timeLimit, **walkPathKwargs)
 
             except PathNotFoundError:
                 continue
