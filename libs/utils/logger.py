@@ -58,6 +58,12 @@ class Logger:
         message = str(message)
         Chat.logColor(message)
 
+    @staticmethod
+    def log(message: str) -> None:
+        """Logs a message to the game"""
+        Logger.print(message)
+
+
     @classmethod
     def debug(cls, message: str) -> None:
         """Prints a debug message to the game"""
