@@ -512,10 +512,11 @@ class Walk:
 
             block = Block.getBlock(pos, mask)
             block1 = Block.getBlock(pos1, mask)
-            if not block.isSolid or not block1.isSolid: continue
+            if not block.isSolid and not block1.isSolid: continue
             if block.id in self.denyListBreak or block1.id in self.denyListBreak: continue
             if self.allowListBreak:
-                if block.id not in self.allowListBreak or block1.id not in self.allowListBreak: continue
+                if block.id not in self.allowListBreak and block.id is not 'minecraft:air': continue
+                if block1.id not in self.allowListBreak and block1.id is not 'minecraft:air': continue
 
             block = Block.createMaskBlock(pos, place=False)
             block1 = Block.createMaskBlock(pos1, place=False)
