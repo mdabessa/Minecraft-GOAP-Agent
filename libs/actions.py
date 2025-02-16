@@ -136,7 +136,7 @@ class Action:
                 and Calc.distance(pos, [b.x, b.y, b.z]) <= reach]
 
         blocks = sorted(blocks, key=lambda b: Calc.distance(pos, [b.x, b.y, b.z]))
-        
+        Inv.sortHotbar()
         listener = Script.scriptListener('breakAllBlocks')
         error = None
         try:
