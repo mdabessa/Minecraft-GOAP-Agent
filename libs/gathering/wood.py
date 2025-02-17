@@ -77,8 +77,59 @@ class Wood:
         block = World.getBlock(int(pos[0]), int(pos[1]), int(pos[2]))
         if block == None: return
 
-        Action.breakAllBlocks(block.getId(), region, safe=False)
+        Action.breakAllBlocks('minecraft:logs', region, safe=False)
 
+
+    @staticmethod
+    def plantSapling(distance: int = 5, minTreeDistance: int = 1):
+        """Plant a sapling if possible"""
+        Logger.print('Planting sapling')
+        saplings = Inv.countItem('minecraft:saplings')
+        if saplings == 0:
+            Logger.warning('No saplings in inventory')
+            return
+
+        dirts = []
+        for id in Dictionary.getIds('minecraft:dirt'):
+            dirts += World.findBlocksMatching(id, 1)
+
+        saplings_block = []
+        for id in Dictionary.getIds('minecraft:saplings'):
+            saplings_block += World.findBlocksMatching(id, 1)
+        
+        logs = []
+        for id in Dictionary.getIds('minecraft:logs'):
+            logs += World.findBlocksMatching(id, 1)
+
+        playerPos = Player.getPlayer().getPos()
+        playerPos = [playerPos.x, playerPos.y, playerPos.z]
+
+        places = []
+        for dirt in dirts:
+            pos = [math.floor(dirt.x), math.floor(dirt.y) + 1, math.floor(dirt.z)]
+            top = Block.getBlock(pos)
+            if top == None or not top.isAir: continue
+
+            if any(Calc.distance(pos, [log.x, log.y, log.z]) < minTreeDistance for log in logs): continue
+            if any(Calc.distance(pos, [sapling.x, sapling.y, sapling.z]) < minTreeDistance for sapling in saplings_block): continue
+
+            if Calc.distance(playerPos, pos) > distance: continue
+            places.append(pos)
+
+  
+        places = sorted(places, key=lambda b: Calc.distance(playerPos, b))
+
+        if len(places) == 0:
+            Logger.warning('No place to plant sapling')
+            return
+
+        for pos in places:
+            try:
+                Logger.debug(f'Planting sapling at {places[0]}')
+                Action.placeBlock(pos, 'minecraft:saplings', fastPlace=False, faces=[0, 1, 0])
+            except Exception as e:
+                Logger.warning(f'Error planting sapling: {e}')
+                return
 
     @staticmethod
     @Craft.collectionMethod(Dictionary.getIds('minecraft:logs'))
@@ -118,6 +169,8 @@ class Wood:
 
             Walk.collectDrops(walkPathKwargs={'canPlace': False, 'allowListBreak': ['minecraft:logs', 'minecraft:leaves']})
             
+            Wood.plantSapling()
+
             _count = Inv.countItems()
             _count = _count.get('minecraft:logs', 0)
 
