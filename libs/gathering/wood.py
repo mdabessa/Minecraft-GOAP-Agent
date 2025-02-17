@@ -20,7 +20,7 @@ class NoTreeFound(Exception):
 class Wood:
     """A class to handle wood gathering"""
     @staticmethod
-    def treeRoot(pos: list, maxHeight: int = 4) -> list:
+    def treeRoot(pos: list, maxHeight: int = 5) -> list:
         """Check if pos is a tree and return the root position"""
         floor = Block.getBlock([math.floor(pos[0]), math.floor(pos[1]) - 1, math.floor(pos[2])])
         if floor == None: return []
@@ -73,7 +73,7 @@ class Wood:
     @staticmethod
     def cutTree(pos: list):
         """Cut a tree at pos"""
-        region = Region.createRegion(pos, [5, 7, 5])
+        region = Region.createRegion(pos, [5, 9, 5])
         block = World.getBlock(int(pos[0]), int(pos[1]), int(pos[2]))
         if block == None: return
 
@@ -98,7 +98,7 @@ class Wood:
             trees = Wood.searchTree()
             if len(trees) == 0:
                 if exploreIfNoWood:
-                    Logger.debug('No trees found, exploring...')
+                    Logger.info('No trees found, exploring...')
                     raise NotImplementedError('Exploration not implemented yet') # TODO: explore function
                 else:
                     raise NoTreeFound('No trees found in the area')
@@ -111,7 +111,7 @@ class Wood:
             try:
                 Walk.walkTo(region, canPlace=False, allowListBreak=['minecraft:logs', 'minecraft:leaves'])
             except Exception as e:
-                Logger.debug(f'Error walking to {pos}: {e}')
+                Logger.warning(f'Error walking to {pos}: {e}')
                 continue
             
             Wood.cutTree(pos)
