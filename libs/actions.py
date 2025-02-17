@@ -198,6 +198,10 @@ class Action:
         if isinstance(blockId, str):
             blockId = [blockId]
 
+        blockId_ = []
+        for id in blockId:
+            blockId_ += Dictionary.getIds(id)
+
         if faces is None:
             faces = [1, 1, 1]
         
@@ -249,7 +253,7 @@ class Action:
             Client.waitTick(1)
 
             _block = Block.getBlock(pos)
-            if _block.id in blockId:
+            if _block.id in blockId_:
                 break
 
             if time.time() - start > 2:
