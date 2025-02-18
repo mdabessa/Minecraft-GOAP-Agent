@@ -228,7 +228,7 @@ class Miner:
                     block1 = Block.getBlock(nextPos1)
                     block2 = Block.getBlock(nextPos2)
 
-                    Action.breakBlock(nextPos1, safe=True)            
+                    Action.breakBlock(nextPos1, safe=False)            
                     
                     if block1.id in ['minecraft:gravel', 'minecraft:sand'] or \
                         block2.id in ['minecraft:gravel', 'minecraft:sand']:
