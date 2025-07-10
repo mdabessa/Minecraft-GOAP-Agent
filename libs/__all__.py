@@ -24,6 +24,9 @@ require('craft', globals())
 require('gathering.wood', globals())
 require('gathering.miner', globals())
 
+# Building libs, depend on core libs
+require('building.destruction', globals())
+
 # Interface libs, depend on all other libs
 require('test', globals())
 require('commands', globals())
