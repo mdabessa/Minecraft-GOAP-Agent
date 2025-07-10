@@ -85,7 +85,7 @@ class Block:
 
     def getVisiblePoints(self, fromPos:list = None, resolution: int = 3, 
                          transparent: bool = False, solid: bool = False, opposite: bool = False,
-                         earlyReturn: bool = False, faces: list = None) -> list[list[list[float]]]:
+                         faces: list = None) -> list[list[list[float]]]:
         """Get visible points of a block"""
         if transparent:
             # TODO: implement transparent visibility
@@ -114,14 +114,11 @@ class Block:
                 i = (1/(resolution + 1)) * (i + 1)
                 j = (1/(resolution + 1)) * (j + 1)
 
-
                 point[index[0]] += i - 0.5
                 point[index[1]] += j - 0.5
+                point[face['face']] += 0.1 if opposite else -0.1
 
-                distance = Calc.distance(fromPos, point) + 1
-                Player.getPlayer().lookAt(point[0], point[1], point[2])
-                block = Player.rayTraceBlock(distance, False)
-                Time.sleep(10)
+                block = World.rayTraceBlock(fromPos[0], fromPos[1], fromPos[2], point[0], point[1], point[2], False)
                 if block is None: continue
                 blockPos = [block.getX(), block.getY(), block.getZ()]
 
@@ -136,7 +133,6 @@ class Block:
                     if blockPos != self.pos: continue
 
                 points.append(point[:])
-                if earlyReturn: return points
             
         # Logger.debug(f'Points: {len(points)}/{(resolution)**2 * len(faces)}')
         # for point in points:
@@ -147,13 +143,12 @@ class Block:
 
     def getInteractPoint(self, fromPos: list = None, resolution: int = 3, 
                          solid: bool = False, opposite: bool = False,
-                         earlyReturn: bool = False,
                          faces: list = None) -> list[float] | None:
         """Get the best interact point of a block"""
         if resolution < 2:
             raise ValueError('Resolution must be greater than 1')
     
-        points = self.getVisiblePoints(fromPos, resolution, opposite=opposite, solid=solid, earlyReturn=earlyReturn, faces=faces)
+        points = self.getVisiblePoints(fromPos, resolution, opposite=opposite, solid=solid, faces=faces)
         if len(points) == 0: return None
 
         grid = {}
