@@ -1,5 +1,6 @@
 import time
 import math
+import itertools
 
 if __name__ == "":
     from JsMacrosAC import *
@@ -62,6 +63,50 @@ class Action:
     
 
     @staticmethod
+    def break_(listener: callable = None):
+        """Break looking at block"""
+        player = Player.getPlayer()
+
+        blockLook = Block.getLookAtBlock()
+        if blockLook is None or blockLook.isAir:
+            return
+        
+        if blockLook.isLiquid:
+            raise PositionNotValidError('Cannot break liquid')
+
+        block_ = Player.detailedRayTraceBlock(4.5, True)
+        pos = block_.asBlock().getPos()
+
+        Inv.sortHotbar()
+        betterTool = Inv.getBetterTool(blockLook.pos)
+        if betterTool != None:
+            Inv.selectTool(betterTool['tool'], )
+            Client.waitTick(1)
+        else:
+            Inv.selectNonTool()
+            Client.waitTick(1)
+
+        while True:
+            if listener is not None:
+                try:
+                    listener()
+                except Exception as e:
+                    KeyBind.releaseKey('key.mouse.left')
+                    raise e
+            
+            player.lookAt(pos.x, pos.y, pos.z)
+            KeyBind.pressKey('key.mouse.left')
+            Client.waitTick(1)
+
+            block = Block.getBlock(blockLook.pos)
+            if block.id != blockLook.id:
+                break
+
+        KeyBind.releaseKey('key.mouse.left')
+
+
+    @staticmethod
+    def breakBlock(pos: list[int] | list[list[int]], safe: bool = True):
     def breakBlock(pos: list[int] | list[list[int]], safe: bool = True, moveToBreak: bool = True, timeout: int = 10):
         """Break a block at pos"""
         if not isinstance(pos[0], list):
@@ -107,7 +152,7 @@ class Action:
                     Walk.walkTo(region, reverse=True, timeLimit=0.1, canPlace=False)
 
                 if safe:
-                    point = block.getInteractPoint(resolution=2)
+                    point = block.getInteractPoint(resolution=5)
                     if point == None:
                         # TODO: add the block to a check list, continue, and
                         # check the block again after breaking another block
@@ -151,8 +196,11 @@ class Action:
 
 
     @staticmethod
-    def breakAllBlocks(blockId: str, region: Region, safe: bool = True):
+    def breakAllBlocks(blockId: str = None, region: Region = None, safe: bool = True):
         """Break all blocks of blockId in region"""
+        if blockId is None and region is None:
+            raise ValueError('blockId or region must be provided')
+        
         pos = Player.getPlayer().getPos()
         pos = [pos.x, pos.y, pos.z]
         reach = Player.getReach()
@@ -165,8 +213,22 @@ class Action:
         blocks = sorted(blocks, key=lambda b: Calc.distance(pos, [b.x, b.y, b.z]))
         
         listener = Script.scriptListener('breakAllBlocks')
+        
+        blocks = []
+        for pos in region.iterate():
+            listener()
+            block = Block.getBlock(pos)
+            if len(ids) > 0 and block.id not in ids:
+                continue
+            
+            if block.isAir or block.isLiquid:
+                continue
+
+            blocks.append(pos)
+
         error = None
         try:
+            listener()
             for block in blocks:
                 listener()
                 block_ = Block.getBlock([math.floor(block.x), math.floor(block.y), math.floor(block.z)])
@@ -186,7 +248,9 @@ class Action:
             raise error
 
     @staticmethod
-    def placeBlock(pos: list, blockId: str | list[str], moveToPlace: bool = True):
+    def placeBlock(pos: list, blockId: str | list[str], 
+                   moveToPlace: bool = True, 
+                   faces: list = None, exactId: bool = True):
         """Place a block at pos"""
     
         if isinstance(blockId, str):
@@ -216,7 +280,7 @@ class Action:
         if not block.isLiquid and not block.isAir:
             raise PositionNotValidError(f'Position {pos} is not a valid position to place {blockId}')
         
-        point = block.getInteractPoint(opposite=True, solid=True)
+        point = block.getInteractPoint(opposite=True, solid=True, faces=faces, resolution=5)
         if point == None:
             raise BlockNotVisibleError(f'Block at {pos} does not have visible support faces to place {blockId}')
 
@@ -242,10 +306,11 @@ class Action:
             Client.waitTick(1)
 
             _block = Block.getBlock(pos)
+            if exactId and _block.id in blockId_:
+                break
+            elif not exactId and _block.isSolid:
             id_ = Dictionary.getGroup(_block.id)
             # Logger.print(f'{id_} in? {blockId}')
-            if id_ in blockId:
-                break
 
             if time.time() - start > 2:
                 raise FailedToPlaceError(f'Failed to place {blockId} at {pos}')
