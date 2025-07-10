@@ -151,7 +151,7 @@ class Miner:
         if light > 2: return
 
         try:
-            Action.placeBlock(pos, 'minecraft:torch', moveToPlace=False, fastPlace=True, faces=[0, 1, 0]) # place on the ground
+            Action.placeBlock(pos, 'minecraft:torch', moveToPlace=False, faces=[0, 1, 0]) # place on the ground
 
             player.lookAt(yaw, pitch)
         except NotEnoughItemsError:
