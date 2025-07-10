@@ -6,6 +6,8 @@ import time
 if __name__ == '':
     from JsMacrosAC import *
     from libs.utils.logger import Logger, Style, LoggerLevel
+    from libs.utils.calc import Calc, Region
+    from libs.building.destruction import Destruction
     from libs.scripts import Script
     from libs.state import State, Waypoint
     from libs.walk import Walk
@@ -357,3 +359,23 @@ def gatherWood(quantity: int = 1, exploreIfNoWood: bool = True, *args, **kwargs)
 @Command.command('mine', help='Mine macro')
 def mine(*args, **kwargs):
     Miner.mine()
+
+
+@Command.command('destroy', help='Destroy blocks in a region')
+def destroy(*args, **kwargs):
+    if len(args) < 6:
+        raise CommandArgumentError('Missing arguments "x1", "y1", "z1", "x2", "y2", "z2"')
+    
+    x1 = float(args[0])
+    y1 = float(args[1])
+    z1 = float(args[2])
+    x2 = float(args[3])
+    y2 = float(args[4])
+    z2 = float(args[5])
+
+    region = Region([x1, y1, z1], [x2, y2, z2])
+    Logger.print(f'Destroying blocks in region {region.getBounds()}')
+
+    Destruction.destroy(region)
+
+    Logger.print(f'Destroyed blocks in region {region.getBounds()}')
