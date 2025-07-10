@@ -45,6 +45,21 @@ class Logger:
     level = LoggerLevel.INFO
     logPath = './config/jsMacros/Macros/logs/latest.log'
 
+    @classmethod
+    def getLevel(cls) -> int:
+        """Returns the current logger level"""
+        level = GlobalVars.getInt('loggerLevel')
+        if level != None:
+            cls.level = level
+
+        return cls.level
+
+    @classmethod
+    def setLevel(cls, level: int) -> None:
+        """Sets the logger level"""
+        cls.level = level
+        GlobalVars.putInt('loggerLevel', level)
+
     @staticmethod
     def printStyles() -> None:
         """Prints all styles"""
@@ -58,10 +73,16 @@ class Logger:
         message = str(message)
         Chat.logColor(message)
 
+    @staticmethod
+    def log(message: str) -> None:
+        """Logs a message to the game"""
+        Logger.print(message)
+
+
     @classmethod
     def debug(cls, message: str) -> None:
         """Prints a debug message to the game"""
-        if cls.level <= LoggerLevel.DEBUG:
+        if cls.getLevel() <= LoggerLevel.DEBUG:
             cls.print(f'{Style.WHITE}[{Style.DARK_GRAY}DEBUG{Style.WHITE}] {message}')
         
         date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
@@ -70,7 +91,7 @@ class Logger:
     @classmethod
     def info(cls, message: str) -> None:
         """Prints an info message to the game"""
-        if cls.level <= LoggerLevel.INFO:
+        if cls.getLevel() <= LoggerLevel.INFO:
             cls.print(f'{Style.WHITE}[{Style.GRAY}INFO{Style.WHITE}] {message}')
 
         date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
@@ -79,7 +100,7 @@ class Logger:
     @classmethod
     def warning(cls, message: str) -> None:
         """Prints a warning message to the game"""
-        if cls.level <= LoggerLevel.WARNING:
+        if cls.getLevel() <= LoggerLevel.WARNING:
             cls.print(f'{Style.WHITE}[{Style.YELLOW}WARNING{Style.WHITE}] {message}')
         
         date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
@@ -88,7 +109,7 @@ class Logger:
     @classmethod
     def error(cls, message: str) -> None:
         """Prints an error message to the game"""
-        if cls.level <= LoggerLevel.ERROR:
+        if cls.getLevel() <= LoggerLevel.ERROR:
             cls.print(f'{Style.WHITE}[{Style.DARK_RED}ERROR{Style.WHITE}] {message}')
         
         date = datetime.datetime.now().strftime('%d/%m/%Y %H:%M:%S')
