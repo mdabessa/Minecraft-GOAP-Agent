@@ -1,5 +1,7 @@
 from __future__ import annotations
+from typing import Iterator
 import math
+from itertools import product
 
 if __name__ == '':
     from JsMacrosAC import *
@@ -44,6 +46,36 @@ class Region:
     def copy(self) -> Region:
         """Return a copy of the region"""
         return Region(self.minPos, self.maxPos)
+    
+    def intersection(self, region: Region) -> Region:
+        """Return the intersection of two regions"""
+        minPos = []
+        maxPos = []
+
+        for i in range(len(self.minPos)):
+            minPos.append(max(self.minPos[i], region.minPos[i]))
+            maxPos.append(min(self.maxPos[i], region.maxPos[i]))
+
+        return Region(minPos, maxPos)
+
+    def iterate(self) -> Iterator[list[int]]:
+        """Iterate over all the positions in the region"""
+        ranges = [range(math.floor(self.minPos[i]), math.floor(self.maxPos[i]) + 1) for i in range(len(self.minPos))]
+
+        for pos in product(*ranges):
+            yield list(pos)
+
+    def divide(self, cellSize: list[int]) -> Iterator[Region]:
+        """Divide the region into cells of a given size"""
+        assert len(cellSize) == len(self.minPos), "The cell size must have the same dimensions as the region"
+
+        ranges = [range(math.floor(self.minPos[i]), math.floor(self.maxPos[i]), cellSize[i]) for i in range(len(self.minPos))]
+
+        for pos in product(*ranges):
+            pos1 = pos
+            pos2 = [pos[i] + cellSize[i] for i in range(len(pos))]
+
+            yield Region(pos1, pos2)
 
 
     @staticmethod
@@ -91,7 +123,6 @@ class Calc:
         y = start[1]
 
         return [x, y, z]
-
 
 
     @staticmethod
