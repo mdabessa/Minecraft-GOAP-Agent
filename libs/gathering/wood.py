@@ -55,11 +55,17 @@ class Wood:
 
     @staticmethod
     @Craft.collectionMethod(Dictionary.getIds('minecraft:logs'))
-    def gatherWood(_, quantity: int = 1, exploreIfNoWood: bool = True):
+    def gatherWood(objective: dict = None, exploreIfNoWood: bool = True):
         """Gather wood"""
-        if quantity <= 0:
-            raise ValueError('quantity must be greater than 0')
-        
+        if objective is None:
+            quantity = 1
+
+        else:
+            quantity = 0
+            for key, item in objective.items():
+                quantity += item
+
+
         count = Inv.countItems()
         count = count.get('minecraft:logs', 0)
         trees = Wood.searchTree()

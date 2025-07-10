@@ -13,6 +13,7 @@ if __name__ == "":
     from libs.scripts import Script
     from libs.actions import Action
     from libs.inventory import Inv
+    from libs.craft import Craft
 
 
 def encodePos(pos: list[int]) -> str:
@@ -31,8 +32,9 @@ class PathNotFoundError(Exception):
 
 class Block:
     """A block in the world"""
-    def __init__(self, state: World.BlockStateHelper, pos: list[int]):
+    def __init__(self, state: World.BlockStateHelper, pos: list[int]): # type: ignore
         self.id = state.getId()
+        self.blockState = state
         self.pos = pos
 
         self.isAir = state.isAir()
@@ -78,7 +80,9 @@ class Block:
         return faces
     
 
-    def getVisiblePoints(self, fromPos:list = None, resolution: int = 3, transparent: bool = False, solid: bool = False, opposite: bool = False) -> list[list[list[float]]]:
+    def getVisiblePoints(self, fromPos:list = None, resolution: int = 3,
+                         transparent: bool = False, solid: bool = False,
+                         opposite: bool = False, earlyReturn: bool = True) -> list[list[list[float]]]:
         """Get visible points of a block"""
         if transparent:
             # TODO: implement transparent visibility
@@ -108,24 +112,28 @@ class Block:
                 point[index[0]] += i - 0.5
                 point[index[1]] += j - 0.5
 
-                distance = Calc.distance(fromPos, point) + 1
-                Player.getPlayer().lookAt(point[0], point[1], point[2])
-                block = Player.rayTraceBlock(distance, False)
-                Time.sleep(10)
-                if block is None: continue
-                blockPos = [block.getX(), block.getY(), block.getZ()]
-
                 if opposite:
                     check = False
                     for face_ in faces:
-                        if face_['neighbor'].pos == blockPos:
-                            check = True
+                        block = World.rayTraceBlock(*fromPos,*face_['neighbor'].pos, True)
+
+                        if block is None: continue
+                        blockPos = [block.getX(), block.getY(), block.getZ()]
+                        if blockPos == self.pos: continue
+                        
+                        check = True
 
                     if not check: continue
-                else:
-                    if blockPos != self.pos: continue
+                else:                    
+                    block = World.rayTraceBlock(*fromPos,*point, True)
+                    if block is not None:
+                        blockPos = [block.getX(), block.getY(), block.getZ()]
+                        if blockPos != self.pos:
+                            continue
 
                 points.append(point[:])
+                if earlyReturn:
+                    return points
             
         # Logger.debug(f'Points: {len(points)}/{(resolution)**2 * len(faces)}')
         # for point in points:
@@ -159,10 +167,31 @@ class Block:
         return point
 
 
+    def checkIfVisible(self):
+        p = self.getVisiblePoints()
+        return len(p) > 0
+
+
+    def getLight(self) -> int:
+        l1 = World.getBlockLight(*self.pos)
+        l2 = World.getSkyLight(*self.pos)
+
+        return max(l1,l2)
+    
+    def __str__(self) -> str:
+        return f'Block(x={self.pos[0]}, y={self.pos[1]}, z={self.pos[2]}, id={self.id})'
+    
+    
+    def __eq__(self, other: Node):
+        return ((self.pos == other.pos) and (self.id == other.id))
+
+
     @staticmethod
     def getBlock(pos: list[int], mask: dict = None) -> Block | None:
         """Get the block at a position"""
         if mask is None: mask = {}
+
+        pos = [math.floor(i) for i in pos]
 
         if encodePos(pos) in mask:
             return mask[encodePos(pos)]
@@ -236,8 +265,11 @@ class Walk:
     def __init__(self, startPos: list[int], endPos: list[int] | Region,
             maxJump: int = 1, maxFall: int = 5,
             canPlace: bool = True, canBreak: bool = True,
+            canBreakUnder: bool = True,
+            canPlaceTorch: bool = True,
             reverse: bool = False, weightMask: float = 1.0,
             maxPathLength: int = 50,
+            earlyMoveReturnCallback: callable = lambda x: False,
             timeLimit: int = 5, saveExplorationMap: str = None,
             listener: callable = lambda: None
         ):
@@ -248,11 +280,15 @@ class Walk:
         maxFall: the maximum number of blocks that the player can fall
         canPlace: if the player can place blocks
         canBreak: if the player can break blocks
+        canBreakUnder: if the player can break blocks under the player
+        canPlaceTorch: if the player can place torch
         reverse: if the player are leaving the end region
         weightMask: the weight to each break and place action
         maxPathLength: the maximum distance of the path, if the path is longer than this, the search will be split in multiple searches
+        earlyMoveReturnCallback: a callback that will be called before each move, if it returns True, the walk will be interrupted and finished
         timeLimit: the time limit to find the path in seconds
         saveExplorationMap: the file to save the exploration map, if None, don't save
+        listener: a callback that will be called in each iteration of the search and move
         """
 
         if not isinstance(startPos, list): # Pos3D
@@ -274,10 +310,13 @@ class Walk:
         self.maxFall = maxFall
         self.canPlace = canPlace
         self.canBreak = canBreak
+        self.canBreakUnder = canBreakUnder
+        self.canPlaceTorch = canPlaceTorch
         self.reverse = reverse
         self.weightMask = weightMask
         self.maxPathLength = maxPathLength
         self.timeLimit = timeLimit
+        self.earlyMoveReturnCallback = earlyMoveReturnCallback
         self.saveExplorationMap = saveExplorationMap
         self.listener = listener        
         self.placeBlocks = [
@@ -358,12 +397,12 @@ class Walk:
                 c = 0
                 while True:
                     c += 1
-                    _block = Block.getBlock([_pos[0], _pos[1] + c, _pos[2]], mask)
+                    _block = Block.getBlock([_pos[0], _pos[1] + c - 1, _pos[2]], mask)
                     
                     if _block is None: return None
                     if _block.isSolid: return None
                     if _block.isWater: continue
-                    if _block.isAir: return [_pos[0], _pos[1] + c, _pos[2]] # return the last water block
+                    if _block.isAir: return [_pos[0], _pos[1] + c - 1, _pos[2]] # return the last water block
             
             # space to walk
             if block.isSolid: continue
@@ -450,7 +489,7 @@ class Walk:
         mask[encodePos(newPos)] = block
         pos = self.getWalkablePos(newPos, node.position, mask)
         if pos is not None:
-            _node = Node(node, pos, mask=mask)
+            _node = Node(node, pos, mask=mask, weight= 1 + block.blockState.getHardness())
             _node.break_ = node.break_ + 1
             _node.action = {
                 'type': 'break',
@@ -461,42 +500,47 @@ class Walk:
         return []
 
 
-    def neigbourBreak2Side(self, node: Node) -> list[Node]:
+    def neigbourBreakSide(self, node: Node, range_: range = None) -> list[Node]:
         """Get the neighbours of a node that are break side nodes"""
-        # these nodes are not node movements, they are just to break blocks
+        if range_ is None: range_ = range(0, 2)
+
         neighbours = []
         for x, z in itertools.product([-1, 0,  1], [-1, 0, 1]):
             if x==0 and z == 0: continue
 
             mask = node.mask.copy()
+            
+            positions = []
+            weight = 0
+            for i in range_:
+                pos = [node.position[0] + x, node.position[1] + i, node.position[2] + z]
+                block = Block.getBlock(pos, mask)
+                if not block.isSolid: continue
+
+                block = Block.createMaskBlock(pos, place=False)
+                weight += block.blockState.getHardness()
+                mask[encodePos(pos)] = block
+                positions.append(pos)
+
+            if len(positions) == 0: continue
 
             pos = [node.position[0] + x, node.position[1], node.position[2] + z]
-            pos1 = [node.position[0] + x, node.position[1] + 1, node.position[2] + z]
-
-            block = Block.getBlock(pos, mask)
-            block1 = Block.getBlock(pos1, mask)
-            if not block.isSolid or not block1.isSolid: continue
-
-            block = Block.createMaskBlock(pos, place=False)
-            block1 = Block.createMaskBlock(pos1, place=False)
-            
-            mask[encodePos(pos)] = block
-            mask[encodePos(pos1)] = block1
-
             newPos = self.getWalkablePos(pos, node.position, mask)
+
             if newPos is None: continue
 
-            _node = Node(node, newPos, mask=mask)
-            _node.break_ = node.break_ + 2
+            _node = Node(node, newPos, mask=mask, weight= 1 + weight)
+            _node.break_ = node.break_ + len(positions)
             _node.action = {
                 'type': 'break',
-                'pos': [pos, pos1],
+                'pos': positions,
             }
+
             neighbours.append(_node)
 
         return neighbours
 
-            
+
     def getNeighbours(self, node: Node) -> list[Node]:
         """Get the neighbours of a node"""
         neighbours = []
@@ -518,12 +562,15 @@ class Walk:
 
         if self.canBreak:
             # TODO: calculate the time to break the block and add to the heuristic
-            nodes = self.neigbourBreakUnder(node)
-            neighbours.extend(nodes)
+            if self.canBreakUnder:
+                nodes = self.neigbourBreakUnder(node)
+                neighbours.extend(nodes)
 
-            nodes = self.neigbourBreak2Side(node)
+            nodes = self.neigbourBreakSide(node)
             neighbours.extend(nodes)            
 
+            nodes = self.neigbourBreakSide(node, range(-1, 2))
+            neighbours.extend(nodes)
 
         return neighbours
 
@@ -532,16 +579,21 @@ class Walk:
         """Basic move to the node position"""
         pos = node.position
         pos = [pos[0]+0.5, pos[1], pos[2]+0.5]
+        block = Block.getBlock([int(pos[0]), int(pos[1]), int(pos[2])])
+        if block.isWater:
+            pos[1] += 1
+
         Logger.debug(f"Moving to {pos}")
         
         if node.action is not None:
             Action.waitStop()
             if node.action['type'] == 'place':
+                Logger.debug(f"Placing {node.action['pos']}")
                 Action.placeBlock(node.action['pos'], self.placeBlocks, moveToPlace=False)
                 
             if node.action['type'] == 'break':
                 Logger.debug(f"Breaking {node.action['pos']}")
-                Action.breakBlock(node.action['pos'])
+                Action.breakBlock(node.action['pos'], moveToBreak=False)
 
 
         startTime = time.time()
@@ -566,7 +618,7 @@ class Walk:
                     actualPos = Player.getPlayer().getPos()
                     actualPos = [actualPos.x, actualPos.y, actualPos.z]        
                     dist2 = actualPos[1] - pos[1]
-                    if dist2 > -0.5: break
+                    if dist2 > -0.2: break
     
                     KeyBind.pressKey("key.keyboard.space")
                     Client.waitTick(1)
@@ -674,7 +726,13 @@ class Walk:
                     # KeyBind.pressKeyBind("key.keyboard.shift")
                     ...
 
+            if self.earlyMoveReturnCallback(node):
+                return
+            
             self.move(node)
+
+            if self.canPlaceTorch:
+                self.placeTorch()
                 
             # KeyBind.releaseKeyBind("key.keyboard.shift")
 
@@ -745,7 +803,7 @@ class Walk:
             self.__thread = threading.Thread(target=self.followPath, args=(path,))
             self.__thread.start()
 
-        Logger.debug("Path finished")
+        Logger.info("Path finished")
 
 
     def heuristic(self, node: Node, end: Node) -> float:
@@ -810,3 +868,22 @@ class Walk:
 
             except PathNotFoundError:
                 continue
+
+                
+    @staticmethod
+    def placeTorch():
+        """Place a torch"""
+        invItems = Inv.countItems()
+        torch = 'minecraft:torch'
+
+        if torch not in invItems:
+            Craft.fastCraft(torch, 1)
+
+        invItems = Inv.countItems()
+        if torch in invItems:
+            pos = Player.getPlayer().getPos()
+            pos = [math.floor(pos.x), math.floor(pos.y), math.floor(pos.z)]
+            block = Block.getBlock(pos)
+
+            if block.getLight() < 5:
+                Action.placeBlock(pos, torch, moveToPlace=False)

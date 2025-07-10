@@ -89,6 +89,9 @@ class Recipe:
         """Count the ingredients needed for the recipe"""
         count = {}
         for ingredient in self.ingredients:
+            if isinstance(ingredient, list):
+                ingredient = ingredient[0]
+
             if 'item' in ingredient:
                 id = ingredient['item']
             elif 'tag' in ingredient:
@@ -258,7 +261,7 @@ class Craft:
             
             # TODO: check if its better to walk to the crafting table or craft a new one
 
-            region = Region.createRegion(place, 3)
+            region = Region.createRegion(place, [64,20,64])
             Walk.walkTo(region)
 
             pos = Player.getPlayer().getPos()
@@ -306,6 +309,7 @@ class Craft:
         Time.sleep(Craft.interactionDelay)
         map = inventory.getMap()
         if 'crafting_in' not in map or 'craft_out' not in map:
+            inventory.close()
             raise CraftingError('Not in a crafting table')
         
         if recipe.pattern is None: 
@@ -317,6 +321,7 @@ class Craft:
                 slots = itemSlot['slots']
                 slots = [s for s in slots if s not in map['crafting_in'] and s not in map['craft_out']]
                 if len(slots) == 0:
+                    inventory.close()
                     raise CraftingError('Not enough items to craft ' + recipe.name)
                 
                 slot = slots[0]
@@ -337,6 +342,7 @@ class Craft:
                     slots = itemSlot['slots']
                     slots = [s for s in slots if s not in map['crafting_in'] and s not in map['craft_out']]
                     if len(slots) == 0:
+                        inventory.close()
                         raise CraftingError('Not enough items to craft ' + recipe.name)
                     slot = slots[0]
 
@@ -361,6 +367,7 @@ class Craft:
         map = inventory.getMap()
 
         if 'input' not in map or 'output' not in map:
+            inventory.close()
             raise CraftingError('Not in a crafting table')        
         
         if recipe.pattern is None: 
@@ -371,6 +378,7 @@ class Craft:
                 slots = itemSlot['slots']
                 slots = [s for s in slots if s not in map['input'] and s not in map['output']]
                 if len(slots) == 0:
+                    inventory.close()
                     raise CraftingError('Not enough items to craft ' + recipe.name)
                 slot = slots[0]
                 inventory.click(slot)
@@ -389,6 +397,7 @@ class Craft:
                     slots = itemSlot['slots']
                     slots = [s for s in slots if s not in map['input'] and s not in map['output']]
                     if len(slots) == 0:
+                        inventory.close()
                         raise CraftingError('Not enough items to craft ' + recipe.name)
                     
                     slot = slots[0]
@@ -437,7 +446,7 @@ class Craft:
 
         if id in Craft.collectionMethods:
             func = Craft.collectionMethods[id]
-            func(id, count)
+            func({id: count})
             Logger.info(f'Collected {id} x{count}')
             return
 
@@ -450,12 +459,15 @@ class Craft:
         recipe = recipes[0] # TODO: select the best recipe and try all recipes if failed
         while True:
             listener()
+
+            Client.waitTick(1)
             invItems = Inv.countItems()
             c = invItems.get(id, 0)
-            Logger.debug(f'Crafting {id} x{count} ({c}/{objective})')
             if c >= objective:
                 Logger.info(f'Crafted {id} x{count}')
                 break
+
+            Logger.debug(f'Crafting {id} x{count} ({c}/{objective})')
 
             recipeItems = recipe.countIngredients(count)
             recalc = False
@@ -466,16 +478,55 @@ class Craft:
                 Craft.craft(id=_id, count=count_, listener=listener)
                 recalc = True
 
-            if recalc: continue
+            if recalc: 
+                continue
 
             if 'crafting' in recipe.type:
                 if recipe.canCraftInHand():
-                    Craft.craftInHand(recipe)
+                    try:
+                        Craft.craftInHand(recipe)
+                    except CraftingError:
+                        continue
                 else:
-                    Craft.craftInTable(recipe)
-
+                    try:
+                        Craft.craftInTable(recipe)
+                    except CraftingError:
+                        continue
             elif 'smelting' in recipe.type:
-                Craft.craftInFurnace(recipe)
-
+                try:
+                    Craft.craftInFurnace(recipe)
+                except CraftingError:
+                    continue
             else:
                 raise NotImplementedError('Recipe type ' + recipe.type + ' not implemented yet')
+
+
+    @staticmethod
+    def fastCraft(id: str, count: int):
+        """Craft the recipe if has all ingredients in the inventory and the recipe can be crafted in hand"""
+
+        recipe = Craft.getRecipes(id)
+
+        if len(recipe) == 0:
+            raise ValueError('No recipe found for id ' + id)
+        
+        for r in recipe:
+            if not r.canCraftInHand():
+                continue
+            
+            invItems = Inv.countItems()
+
+            recipeItems = r.countIngredients(count)
+     
+            hasAllIngredients = True
+            for _id in recipeItems:
+                _id = Dictionary.getGroup(_id)
+                if _id not in invItems or invItems[_id] < recipeItems[_id]:
+                    hasAllIngredients = False
+                    break
+            
+            if not hasAllIngredients:
+                continue
+            
+            Logger.info(f'Fast crafting {id} x{count}')
+            Craft.craftInHand(r)

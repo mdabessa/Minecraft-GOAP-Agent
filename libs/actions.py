@@ -5,6 +5,7 @@ if __name__ == "":
     from JsMacrosAC import *
     from libs.utils.calc import Calc, Region
     from libs.utils.logger import Logger
+    from libs.utils.dictionary import Dictionary
     from libs.scripts import Script
     from libs.inventory import Inv, NotEnoughItemsError
     from libs.walk import Walk, Block, PathNotFoundError
@@ -61,7 +62,7 @@ class Action:
     
 
     @staticmethod
-    def breakBlock(pos: list[int] | list[list[int]], safe: bool = True):
+    def breakBlock(pos: list[int] | list[list[int]], safe: bool = True, moveToBreak: bool = True, timeout: int = 10):
         """Break a block at pos"""
         if not isinstance(pos[0], list):
             pos = [pos]
@@ -76,19 +77,35 @@ class Action:
         try:
             for p in pos:
                 p = [math.floor(p[0]), math.floor(p[1]), math.floor(p[2])]
-                if safe:
-                    betterTool = Inv.getBetterTool(p)
-                    if betterTool != None:
-                        Inv.selectTool(betterTool['tool'])
-                        Client.waitTick(1)
-                    else:
-                        Inv.selectNonTool()
-                        Client.waitTick(1)
-
+                
                 player = Player.getPlayer()
                 block = Block.getBlock(p)
                 if not block.isSolid: continue
                 
+                playerPos = player.getPos()
+                playerPos = [playerPos.x, playerPos.y, playerPos.z]
+                reach = Player.getReach()
+                point = block.getInteractPoint(resolution=2)
+                if point is None:
+                    if safe:
+                        raise BlockNotVisibleError(f'Block at {p} is not visible')
+                    else:
+                        point = block.pos
+
+                if Calc.distance(playerPos, point) > reach:
+                    if moveToBreak:
+                        region = Region.createRegion(block.pos, int(reach))
+                        try:
+                            Walk.walkTo(region, timeLimit=0.1)
+                        except PathNotFoundError:
+                            raise OutOfReachError()
+                    else:
+                        raise OutOfReachError()
+
+                if moveToBreak:
+                    region = Region.createRegion(block.pos, [1, 2, 1])        
+                    Walk.walkTo(region, reverse=True, timeLimit=0.1, canPlace=False)
+
                 if safe:
                     point = block.getInteractPoint(resolution=2)
                     if point == None:
@@ -99,6 +116,14 @@ class Action:
                 else:
                     point = [block.pos[0] + 0.5, block.pos[1] + 0.5, block.pos[2] + 0.5]
 
+                betterTool = Inv.getBetterTool(p)
+                if betterTool != None:
+                    Inv.selectTool(betterTool['tool'])
+                else:
+                    Inv.selectNonTool()
+                    Client.waitTick(1)
+
+                start = time.time()
                 while True:
                     listener()
                     player.lookAt(point[0], point[1], point[2])
@@ -109,6 +134,8 @@ class Action:
 
                     KeyBind.pressKey('key.mouse.left')
                     Client.waitTick(1)
+                    if time.time() - start > timeout:
+                        raise TimeoutError()
                 
                 KeyBind.releaseKey('key.mouse.left')
 
@@ -165,6 +192,8 @@ class Action:
         if isinstance(blockId, str):
             blockId = [blockId]
         
+        blockId = [Dictionary.getGroup(i) for i in blockId]
+
         items = Inv.countItems()
         item = None
         for id in blockId:
@@ -184,7 +213,7 @@ class Action:
         player = Player.getPlayer()
 
         block = Block.getBlock(pos)
-        if block.isSolid:
+        if not block.isLiquid and not block.isAir:
             raise PositionNotValidError(f'Position {pos} is not a valid position to place {blockId}')
         
         point = block.getInteractPoint(opposite=True, solid=True)
@@ -213,7 +242,9 @@ class Action:
             Client.waitTick(1)
 
             _block = Block.getBlock(pos)
-            if _block.isSolid:
+            id_ = Dictionary.getGroup(_block.id)
+            # Logger.print(f'{id_} in? {blockId}')
+            if id_ in blockId:
                 break
 
             if time.time() - start > 2:
@@ -225,44 +256,20 @@ class Action:
         """Interact with a block at pos"""
         Logger.debug(f'Interacting with block at {pos}')
         player = Player.getPlayer()
-        player.lookAt(math.floor(pos[0]) + 0.5, math.floor(pos[1]) + 0.5, math.floor(pos[2]) + 0.5)
 
-        reach = Player.getReach()
-        
-        block = Action.rayTraceBlock()
-        if ((block is None) or (Calc.distance([
-            math.floor(block.getX()), math.floor(block.getY()), math.floor(block.getZ())], pos) != 0)): 
+        block = Block.getBlock(pos)
+        point = block.getInteractPoint()
+        if point == None:
+            raise BlockNotVisibleError(f'Block at {pos} is not visible')
 
-            block = Block.getBlock(pos)
-            point = block.getInteractPoint()
-            if point == None:
-                raise BlockNotVisibleError(f'Block at {pos} is not visible')
+        playerPos = player.getPos()
+        playerPos = [playerPos.x, playerPos.y, playerPos.z]
+        if Calc.distance(playerPos, point) > Player.getReach():
+            raise OutOfReachError(f'Player is out of reach to interact with block at {pos}')
 
-            playerPos = Player.getPlayer().getPos()
-            playerPos = [playerPos.x, playerPos.y, playerPos.z]
-            if Calc.distance(playerPos, point) > reach:
-                raise OutOfReachError(f'Player is out of reach to interact with block at {pos}')
-
-            player.lookAt(point[0], point[1], point[2])
+        player.lookAt(point[0], point[1], point[2])
 
         Client.waitTick(1)
         KeyBind.pressKey('key.mouse.right')
         Client.waitTick(1)
         KeyBind.releaseKey('key.mouse.right')
-
-
-    @staticmethod
-    def rayTraceBlock(steps: float = 0.1, maxDistance: float = None):
-        """Ray trace and return the first block"""
-        if maxDistance is None:
-            maxDistance = Player.getReach()
-
-        for i in range(1, int(maxDistance / steps)):
-            reach = i * steps
-
-            block = Player.rayTraceBlock(reach, False)
-            if block is not None and block.getId() != 'minecraft:air':
-                return block
-            
-        return None
-        

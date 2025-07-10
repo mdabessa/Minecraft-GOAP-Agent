@@ -26,6 +26,18 @@ GROUPS = {
         'minecraft:planks',
         'minecraft:plank',
     ],
+    'minecraft:stone_tool_materials': [
+        'minecraft:cobblestone',
+        'minecraft:blackstone',
+    ],
+    'minecraft:torch': [
+        'minecraft:torch',
+        'minecraft:wall_torch',
+    ],
+    'minecraft:coal': [
+        'minecraft:coal',
+        'minecraft:charcoal',
+    ]
 }
 
 class Dictionary:
