@@ -3,7 +3,7 @@ import math
 if __name__ == '':
     from JsMacrosAC import *
     from libs.utils.dictionary import Dictionary
-    from libs.utils.logger import Logger
+    from libs.utils.logger import Logger, Style
 
 
 
@@ -31,6 +31,14 @@ class Inv:
         'shovel',
     ]
     
+    levels = [
+        'wooden',
+        'stone',
+        'iron',
+        'diamond',
+        'netherite'
+    ]
+
 
     @staticmethod
     def getBetterTool(pos: list[int]) -> str:
@@ -43,6 +51,7 @@ class Inv:
         player = Player.getPlayer()
         map = inventory.getMap()
 
+        Inv.sortHotbar()
         tools = []
         for tool in Inv.tools:
             item = inventory.getSlot(map['hotbar'][Inv.hotbarSortMap[tool]])
@@ -104,9 +113,7 @@ class Inv:
             hotbarSlot = map['hotbar'][Inv.hotbarSortMap[item]]
             if itemSlot != hotbarSlot:
                 inventory.swap(itemSlot, hotbarSlot)
-                Time.sleep(100)
-
-            Client.waitTick(1)
+                Client.waitTick(1)
 
         inventory.close()
 
@@ -155,15 +162,23 @@ class Inv:
 
 
     @staticmethod
-    def getToolLevel(tool_type: str) -> int:
+    def getToolLevel(tool: str) -> int:
         """Get the level of the tool"""
-        if 'wood' in tool_type: return 1
-        if 'stone' in tool_type: return 2
-        if 'gold' in tool_type: return 2
-        if 'iron' in tool_type: return 3
-        if 'diamond' in tool_type: return 4
-        if 'netherite' in tool_type: return 5
+        if 'wood' in tool: return 1
+        if 'stone' in tool: return 2
+        if 'gold' in tool: return 2
+        if 'iron' in tool: return 3
+        if 'diamond' in tool: return 4
+        if 'netherite' in tool: return 5
         return -1
+    
+    @staticmethod
+    def getEquippedToolLevel(tool: str) -> int:
+        """Get the level of the equipped tool"""
+        inventory = Player.openInventory()
+        map = inventory.getMap()
+        item = inventory.getSlot(map['hotbar'][Inv.hotbarSortMap[tool]])
+        return Inv.getToolLevel(item.getItemId())
     
 
     @staticmethod
@@ -244,10 +259,13 @@ class Inv:
         """Go to the tool hotbar slot, select it and return the level of the tool"""
         if tool not in Inv.hotbarSortMap:
             raise Exception(f'Invalid tool {tool}')
-
+    
+        Inv.sortHotbar()
+    
         inventory = Player.openInventory()
-        inventory.setSelectedHotbarSlotIndex(Inv.hotbarSortMap[tool])
-        Client.waitTick(1)
+        if inventory.getSelectedHotbarSlotIndex() != Inv.hotbarSortMap[tool]:
+            inventory.setSelectedHotbarSlotIndex(Inv.hotbarSortMap[tool])
+            Client.waitTick(1)
 
         map = inventory.getMap()
         item = inventory.getSlot(map['hotbar'][Inv.hotbarSortMap[tool]])
@@ -261,22 +279,17 @@ class Inv:
         inventory.setSelectedHotbarSlotIndex(Inv.hotbarSortMap['food'])
         Client.waitTick(1)
 
-    @staticmethod
-    def getToolDurability(tool: str) -> int:
-        """Get the tool health"""
-
-        Inv.selectTool(tool)
-        inventory = Player.openInventory()
-        map = inventory.getMap()
-        item = inventory.getSlot(map['hotbar'][Inv.hotbarSortMap[tool]])
-        return item.getDurability()
-    
 
     @staticmethod
-    def getActualToolLevel(tool: str) -> int:
-        """Get the actual tool level"""
+    def getToolByLevel(tool: str, level: int) -> str:
+        if tool not in Inv.tools:
+            raise ValueError(f'Tool {tool} not exists')
+        
+        level -= 1
 
-        inventory = Player.openInventory()
-        map = inventory.getMap()
-        item = inventory.getSlot(map['hotbar'][Inv.hotbarSortMap[tool]])
-        return Inv.getToolLevel(item.getItemId())
+        if level < 0 or level > 5:
+            raise ValueError(f'Tool level {level+1} not exists')
+
+        level = Inv.levels[level]
+
+        return f'minecraft:{level}_{tool}'

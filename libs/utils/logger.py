@@ -118,6 +118,7 @@ class Logger:
     @classmethod
     def save(cls, message: str) -> None:
         """Saves a message to the log file"""
+        # return # Disable logging to file
         path = os.path.dirname(cls.logPath)
         if not os.path.exists(path):
             os.makedirs(path)

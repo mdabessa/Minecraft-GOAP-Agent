@@ -26,42 +26,21 @@ GROUPS = {
         'minecraft:planks',
         'minecraft:plank',
     ],
-
-    "minecraft:leaves": [
-        'minecraft:oak_leaves',
-        'minecraft:birch_leaves',
-        'minecraft:spruce_leaves',
-        'minecraft:jungle_leaves',
-        'minecraft:acacia_leaves',
-        'minecraft:dark_oak_leaves',
-        'minecraft:mangrove_leaves',
-        'minecraft:cherry_leaves',
-        'minecraft:azalea_leaves',
-        'minecraft:flowering_azalea_leaves',
+    'minecraft:stone_tool_materials': [
+        'minecraft:cobblestone',
+        'minecraft:blackstone',
     ],
-
-    "minecraft:saplings": [
-        'minecraft:oak_sapling',
-        'minecraft:birch_sapling',
-        'minecraft:spruce_sapling',
-        'minecraft:jungle_sapling',
-        'minecraft:acacia_sapling',
-        'minecraft:dark_oak_sapling',
-        'minecraft:mangrove_sapling',
-        'minecraft:cherry_sapling',
+    'minecraft:torch': [
+        'minecraft:torch',
+        'minecraft:wall_torch',
     ],
-
-    "minecraft:dirt": [
-        'minecraft:dirt',
-        'minecraft:dirt_path',
-        'minecraft:coarse_dirt',
-        'minecraft:rooted_dirt',
-        'minecraft:grass_block',
-    ],
+    'minecraft:coal': [
+        'minecraft:coal',
+        'minecraft:charcoal',
+    ]
 }
 
 class Dictionary:
-    @staticmethod
     def getGroup(name: str) -> str:
         """Get the group/tag of a item"""
         for group in GROUPS:
@@ -70,7 +49,6 @@ class Dictionary:
         
         return name
 
-    @staticmethod
     def getIds(group: str) -> list:
         """Get all items in a group/tag"""
         if group in GROUPS:

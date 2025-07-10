@@ -215,6 +215,9 @@ class Test:
             end = Calc.pointOnLine(start, end, distance)
             region = Region.createRegion(end, 16)
             
+            Time.sleep(3000)
+            Logger.print(f'Waiting for chunk load...')
+
             Walk.walkTo(region, *args, **kwargs)
 
             data['start'] = start
